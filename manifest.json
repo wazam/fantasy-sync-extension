@@ -3,9 +3,9 @@
   "name": "Fantasy Sync Assistant",
   "version": "1.0",
   "description": "Helps sync ESPN fantasy baseball roster transactions to a Fantrax clone league by reading recent activity and automating the Fantrax Commissioner Claim/Drop page.",
-  "author": "James",
+  "author": "James Wazam",
   "icons": {
-    "48": "icons/icon-48.png"
+    "48": "assets/icons/icon-48.png"
   },
   "browser_specific_settings": {
     "gecko": {
@@ -30,7 +30,7 @@
   "browser_action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "48": "icons/icon-48.png"
+      "48": "assets/icons/icon-48.png"
     },
     "default_title": "Fantasy Sync Assistant"
   },
