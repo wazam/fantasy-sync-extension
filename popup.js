@@ -39,6 +39,16 @@ function parseCutoffStr(str) {
   return new Date(y, m - 1, d, hour, min, 0);
 }
 
+function dateToISO(val) {
+  const d = new Date(val);
+  const y  = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const dy = String(d.getDate()).padStart(2, "0");
+  const h  = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${y}-${mo}-${dy} ${h}:${mi}`;
+}
+
 function formatDate(val) {
   if (!val) return "?";
   const dt = new Date(val);
@@ -50,6 +60,52 @@ function formatDate(val) {
   const h12 = h % 12 || 12;
   return `${months[dt.getMonth()]} ${dt.getDate()} ${h12}:${mins}${ampm}`;
 }
+
+async function loadLeagueIds() {
+  const res = await browser.storage.local.get(["espnLeagueId", "fantraxLeagueId"]);
+  if (res.espnLeagueId)    document.getElementById("espnLeagueId").value    = res.espnLeagueId;
+  if (res.fantraxLeagueId) document.getElementById("fantraxLeagueId").value = res.fantraxLeagueId;
+  updateLinkButtons(res.espnLeagueId, res.fantraxLeagueId);
+}
+
+function updateLinkButtons(espnId, fantraxId) {
+  const btnEspn         = document.getElementById("linkEspn");
+  const btnFantraxRecent = document.getElementById("linkFantraxRecent");
+  const btnFantraxClaim = document.getElementById("linkFantraxClaim");
+
+  if (espnId) {
+    btnEspn.classList.remove("disabled");
+    btnEspn.onclick = () => browser.tabs.create({
+      url: `https://fantasy.espn.com/baseball/recentactivity?leagueId=${espnId}`
+    });
+  } else {
+    btnEspn.classList.add("disabled");
+    btnEspn.onclick = () => alert("Save your ESPN League ID first.");
+  }
+
+  if (fantraxId) {
+    btnFantraxRecent.classList.remove("disabled");
+    btnFantraxRecent.onclick = () => browser.tabs.create({
+      url: `https://www.fantrax.com/fantasy/league/${fantraxId}/transactions/history`
+    });
+    btnFantraxClaim.classList.remove("disabled");
+    btnFantraxClaim.onclick = () => browser.tabs.create({
+      url: `https://www.fantrax.com/newui/fantasy/claimDrop.go?leagueId=${fantraxId}`
+    });
+  } else {
+    btnFantraxRecent.classList.add("disabled");
+    btnFantraxRecent.onclick = () => alert("Save your Fantrax League ID first.");
+    btnFantraxClaim.classList.add("disabled");
+    btnFantraxClaim.onclick = () => alert("Save your Fantrax League ID first.");
+  }
+}
+
+document.getElementById("saveLeagues").onclick = async () => {
+  const espnId    = document.getElementById("espnLeagueId").value.trim();
+  const fantraxId = document.getElementById("fantraxLeagueId").value.trim();
+  await browser.storage.local.set({ espnLeagueId: espnId, fantraxLeagueId: fantraxId });
+  updateLinkButtons(espnId, fantraxId);
+};
 
 async function loadCutoff() {
   const res = await browser.storage.local.get("cutoff");
@@ -85,6 +141,22 @@ async function renderQueue() {
 
     const row = document.createElement("div");
     row.className = "tx-row" + (isCutoff ? " tx-cutoff" : "") + (isDone ? " tx-done" : "");
+    if (txDate) {
+      row.title = "Click to set as cutoff";
+      row.style.cursor = "pointer";
+      row.addEventListener("click", () => {
+        const cutoffEl = document.getElementById("cutoff");
+        cutoffEl.value = dateToISO(txDate);
+        cutoffEl.focus();
+        cutoffEl.select();
+      });
+      row.addEventListener("dblclick", async () => {
+        const value = dateToISO(txDate);
+        document.getElementById("cutoff").value = value;
+        await browser.storage.local.set({ cutoff: value });
+        renderQueue();
+      });
+    }
 
     const typeLabel = tx.type === "ADD_DROP" ? "A+D" : (tx.type || "?");
 
@@ -149,4 +221,9 @@ document.getElementById("next").onclick = async () => {
   setTimeout(renderQueue, 300);
 };
 
+browser.runtime.onMessage.addListener((msg) => {
+  if (msg.type === "QUEUE_UPDATED") renderQueue();
+});
+
+loadLeagueIds();
 loadCutoff().then(renderQueue);

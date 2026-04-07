@@ -1,10 +1,22 @@
 console.log("[EXT] content script injected:", location.href);
 
+const NAME_SUFFIXES = /^(jr\.?|sr\.?|ii|iii|iv|v)$/i;
+
 function parseName(full) {
   const parts = full.trim().split(" ");
+
+  // if the last word is a suffix (Jr., Sr., II, etc.) combine it with the
+  // preceding word so "Lance McCullers Jr." → last: "McCullers Jr."
+  if (parts.length > 2 && NAME_SUFFIXES.test(parts[parts.length - 1])) {
+    return {
+      first: parts.slice(0, -2).join(" "),
+      last:  parts.slice(-2).join(" ")
+    };
+  }
+
   return {
     first: parts.slice(0, -1).join(" "),
-    last: parts.slice(-1)[0]
+    last:  parts.slice(-1)[0]
   };
 }
 
@@ -73,12 +85,15 @@ function extractTransactions() {
 
     if (!type) return;
 
+    const idx = parseInt(row.getAttribute("data-idx"), 10);
+
     results.push({
       type,
       team,
       add,
       drop,
-      date: parseDate(row)
+      date: parseDate(row),
+      idx: isNaN(idx) ? 0 : idx
     });
   });
 
