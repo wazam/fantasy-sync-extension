@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 8px;
+      width: 380px;
+      margin: 0;
+    }
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    label {
+      font-size: 11px;
+      color: #555;
+      white-space: nowrap;
+    }
+    #cutoff {
+      flex: 1;
+      font-size: 11px;
+      padding: 3px 4px;
+    }
+    button {
+      font-size: 11px;
+      padding: 4px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #next {
+      width: 100%;
+      font-size: 12px;
+      padding: 6px;
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    #next:hover { background: #1558b0; }
+
+    #queue-list {
+      border-top: 1px solid #ccc;
+      padding-top: 6px;
+      max-height: 320px;
+      overflow-y: auto;
+      font-size: 11px;
+    }
+    .tx-row {
+      display: flex;
+      gap: 6px;
+      padding: 3px 2px;
+      border-bottom: 1px solid #f0f0f0;
+      align-items: baseline;
+      line-height: 1.3;
+    }
+    .tx-row.tx-done {
+      color: #bbb;
+      text-decoration: line-through;
+    }
+    .tx-row.tx-cutoff {
+      color: #bbb;
+    }
+    .tx-row.tx-cutoff.tx-done {
+      color: #ddd;
+    }
+    .tx-date  { flex: 0 0 90px; color: inherit; font-size: 10px; }
+    .tx-type  { flex: 0 0 28px; font-weight: bold; text-align: center; font-size: 10px; }
+    .tx-team  { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tx-players { flex: 0 0 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .add  { color: #079a3e; }
+    .drop { color: #ec1c25; }
+    .tx-row.tx-cutoff .add,
+    .tx-row.tx-cutoff .drop,
+    .tx-row.tx-done .add,
+    .tx-row.tx-done .drop { color: inherit; }
+    .empty { color: #999; font-size: 11px; padding: 6px 2px; }
+    .queue-header {
+      font-size: 10px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <div class="row">
+      <label>Cutoff (YYYY-MM-DD HH:MM):</label>
+    </div>
+    <div class="row">
+      <input id="cutoff" type="text" placeholder="2026-03-29 00:00">
+      <button id="save">Save</button>
+    </div>
+    <button id="next">Next Transaction (F8)</button>
+  </div>
+
+  <div id="queue-list">
+    <div class="empty">No transactions loaded yet.</div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

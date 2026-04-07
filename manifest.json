@@ -1,0 +1,57 @@
+{
+  "manifest_version": 2,
+  "name": "Fantasy Sync Assistant",
+  "version": "1.0",
+  "description": "Helps sync ESPN fantasy baseball roster transactions to a Fantrax clone league by reading recent activity and automating the Fantrax Commissioner Claim/Drop page.",
+  "author": "James",
+  "icons": {
+    "48": "icons/icon-48.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "fantasy-sync-assistant@fantasy-sync",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"],
+        "optional": []
+      }
+    }
+  },
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "*://fantasy.espn.com/*",
+    "*://www.fantrax.com/*"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icons/icon-48.png"
+    },
+    "default_title": "Fantasy Sync Assistant"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://fantasy.espn.com/*recentactivity*"],
+      "js": ["espn.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://www.fantrax.com/*claimDrop*"],
+      "js": ["fantrax.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "next-transaction": {
+      "suggested_key": {
+        "default": "F8"
+      },
+      "description": "Process next transaction (Fantrax only)"
+    }
+  }
+}
