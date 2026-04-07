@@ -10,7 +10,9 @@ function selectTeam(teamName) {
   if (!select) return false;
 
   for (let opt of select.options) {
-    if (opt.text.trim() === teamName) {
+    // strip trailing " *" that Fantrax appends to the commissioner's team
+    const optText = opt.text.trim().replace(/\s*\*+\s*$/, "");
+    if (optText === teamName) {
       select.value = opt.value;
       select.dispatchEvent(new Event("change"));
       return true;
