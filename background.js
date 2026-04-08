@@ -1,7 +1,9 @@
 let queue = [];
 let index = 0;
 let prevIndex = 0;
-const seenKeys = new Set();
+const seenKeys    = new Set();
+const excludedKeys = new Set();
+let upperCutoff = null; // "YYYY-MM-DD HH:MM" or null
 
 function txKey(tx) {
   const t = tx.date ? new Date(tx.date).getTime() : 0;
@@ -68,7 +70,7 @@ browser.runtime.onMessage.addListener((msg) => {
   }
 
   if (msg.type === "GET_QUEUE") {
-    return Promise.resolve({ queue, index });
+    return Promise.resolve({ queue, index, excludedKeys: [...excludedKeys] });
   }
 
   if (msg.type === "REWIND_QUEUE") {
@@ -77,10 +79,36 @@ browser.runtime.onMessage.addListener((msg) => {
     return Promise.resolve();
   }
 
+  if (msg.type === "SET_UPPER_CUTOFF") {
+    upperCutoff = msg.value || null;
+    updateBadge();
+    return Promise.resolve();
+  }
+
+  if (msg.type === "TOGGLE_EXCLUDE") {
+    const key = msg.key;
+    if (excludedKeys.has(key)) excludedKeys.delete(key);
+    else                        excludedKeys.add(key);
+    updateBadge();
+    browser.runtime.sendMessage({ type: "QUEUE_UPDATED" }).catch(() => {});
+    return Promise.resolve();
+  }
+
+  if (msg.type === "PROCESSING_DONE") {
+    return (async () => {
+      if (upperCutoff) {
+        await browser.storage.local.set({ cutoff: upperCutoff });
+        await browser.storage.local.remove("upperCutoff"); // clear so next popup open defaults to now
+        browser.runtime.sendMessage({ type: "CUTOFF_SAVED" }).catch(() => {});
+      }
+    })();
+  }
+
   if (msg.type === "GET_NEXT") {
     return (async () => {
 
       const cutoff = await getCutoffDate();
+      const upper  = upperCutoff ? parseCutoffStr(upperCutoff) : null;
       prevIndex = index;
 
       while (index < queue.length) {
@@ -88,10 +116,13 @@ browser.runtime.onMessage.addListener((msg) => {
 
         if (!tx.date) continue;
 
-        if (tx.date >= cutoff) {
-          updateBadge();
-          return tx;
-        }
+        const txDate = new Date(tx.date);
+        if (txDate < cutoff) continue;
+        if (upper && txDate > upper) continue;
+        if (excludedKeys.has(txKey(tx))) continue;
+
+        updateBadge();
+        return tx;
       }
 
       updateBadge();
@@ -120,9 +151,15 @@ function isFantrax(tab) {
 
 async function updateBadge() {
   const cutoff = await getCutoffDate();
-  const remaining = queue.slice(index).filter(
-    tx => tx.date && new Date(tx.date) >= cutoff
-  ).length;
+  const upper  = upperCutoff ? parseCutoffStr(upperCutoff) : null;
+  const remaining = queue.slice(index).filter(tx => {
+    if (!tx.date) return false;
+    const d = new Date(tx.date);
+    if (d < cutoff) return false;
+    if (upper && d > upper) return false;
+    if (excludedKeys.has(txKey(tx))) return false;
+    return true;
+  }).length;
 
   browser.browserAction.setBadgeText({ text: remaining > 0 ? String(remaining) : "" });
   browser.browserAction.setBadgeBackgroundColor({ color: "#1a73e8" });

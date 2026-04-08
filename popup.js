@@ -20,9 +20,9 @@ function normalizeToISO(str) {
   if (ampm === "pm" && hour !== 12) hour += 12;
   if (ampm === "am" && hour === 12) hour  = 0;
 
-  const mm  = String(monthNum).padStart(2, "0");
-  const dd  = String(day).padStart(2, "0");
-  const hh  = String(hour).padStart(2, "0");
+  const mm = String(monthNum).padStart(2, "0");
+  const dd = String(day).padStart(2, "0");
+  const hh = String(hour).padStart(2, "0");
 
   return `2026-${mm}-${dd} ${hh}:${min}`;
 }
@@ -40,7 +40,7 @@ function parseCutoffStr(str) {
 }
 
 function dateToISO(val) {
-  const d = new Date(val);
+  const d  = new Date(val);
   const y  = d.getFullYear();
   const mo = String(d.getMonth() + 1).padStart(2, "0");
   const dy = String(d.getDate()).padStart(2, "0");
@@ -54,11 +54,28 @@ function formatDate(val) {
   const dt = new Date(val);
   if (isNaN(dt)) return "?";
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const h = dt.getHours();
+  const h    = dt.getHours();
   const mins = dt.getMinutes().toString().padStart(2, "0");
   const ampm = h >= 12 ? "pm" : "am";
-  const h12 = h % 12 || 12;
+  const h12  = h % 12 || 12;
   return `${months[dt.getMonth()]} ${dt.getDate()} ${h12}:${mins}${ampm}`;
+}
+
+// Mirrors txKey() in background.js — used to compute exclude keys in the popup
+function txKeyForRow(tx) {
+  const t = tx.date ? new Date(tx.date).getTime() : 0;
+  if (tx.type === "TRADE") {
+    const players = Object.values(tx.sides || {}).flat()
+      .map(p => `${p.first}|${p.last}`).sort().join(",");
+    return `TRADE||${players}||${t}`;
+  }
+  return [
+    tx.team  || "",
+    tx.type  || "",
+    tx.add  ? tx.add.first  + "|" + tx.add.last  : "",
+    tx.drop ? tx.drop.first + "|" + tx.drop.last : "",
+    t
+  ].join("||");
 }
 
 async function loadLeagueIds() {
@@ -119,9 +136,89 @@ async function loadCutoff() {
   document.getElementById("cutoff").value = res.cutoff || "2026-03-29 00:00";
 }
 
+async function loadUpperCutoff() {
+  const res = await browser.storage.local.get("upperCutoff");
+  const val = res.upperCutoff || dateToISO(new Date());
+  document.getElementById("upperCutoff").value = val;
+  browser.runtime.sendMessage({ type: "SET_UPPER_CUTOFF", value: val }).catch(() => {});
+}
+
+// ── Drag selection ────────────────────────────────────────────────────────────
+
+let dragState    = null;
+let dragOccurred = false;
+
+function updateDragHighlight() {
+  if (!dragState?.dragging) return;
+  const list     = document.getElementById("queue-list");
+  const allRows  = [...list.querySelectorAll(".tx-row")];
+  const startIdx = allRows.indexOf(dragState.startRow);
+  const endIdx   = dragState.currentRow ? allRows.indexOf(dragState.currentRow) : startIdx;
+  const lo = Math.min(startIdx, endIdx >= 0 ? endIdx : startIdx);
+  const hi = Math.max(startIdx, endIdx >= 0 ? endIdx : startIdx);
+  allRows.forEach((row, idx) => row.classList.toggle("drag-selected", idx >= lo && idx <= hi));
+}
+
+function clearDragHighlight() {
+  document.querySelectorAll("#queue-list .tx-row.drag-selected")
+    .forEach(r => r.classList.remove("drag-selected"));
+}
+
+function finalizeDrag() {
+  const list     = document.getElementById("queue-list");
+  const selected = [...list.querySelectorAll(".tx-row.drag-selected")];
+  const dates    = selected.map(r => r.dataset.date).filter(Boolean).sort();
+  if (!dates.length) return;
+  document.getElementById("cutoff").value      = dates[0];                 // oldest → lower bound
+  document.getElementById("upperCutoff").value = dates[dates.length - 1]; // newest → upper bound
+  browser.runtime.sendMessage({ type: "SET_UPPER_CUTOFF", value: dates[dates.length - 1] }).catch(() => {});
+  renderQueue();
+}
+
+function setupDragSelection() {
+  const list = document.getElementById("queue-list");
+
+  list.addEventListener("mousedown", e => {
+    const row = e.target.closest(".tx-row");
+    if (!row || !row.dataset.date || e.ctrlKey) return;
+    dragState = { startRow: row, startX: e.clientX, startY: e.clientY, dragging: false };
+    e.preventDefault(); // prevent text selection during drag
+  });
+
+  document.addEventListener("mousemove", e => {
+    if (!dragState) return;
+    if (!dragState.dragging) {
+      if (Math.abs(e.clientX - dragState.startX) > 5 || Math.abs(e.clientY - dragState.startY) > 5)
+        dragState.dragging = true;
+    }
+    if (dragState.dragging) {
+      const row = e.target.closest?.(".tx-row");
+      if (row) dragState.currentRow = row;
+      updateDragHighlight();
+    }
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (!dragState) return;
+    if (dragState.dragging) {
+      dragOccurred = true;
+      finalizeDrag();
+      setTimeout(() => { dragOccurred = false; }, 100);
+    }
+    clearDragHighlight();
+    dragState = null;
+  });
+}
+
+// ── Queue rendering ───────────────────────────────────────────────────────────
+
 async function renderQueue() {
   const list = document.getElementById("queue-list");
-  const res = await browser.runtime.sendMessage({ type: "GET_QUEUE" });
+  const res  = await browser.runtime.sendMessage({ type: "GET_QUEUE" });
+
+  // Keep background upper cutoff in sync with whatever the input shows
+  const upperVal = (document.getElementById("upperCutoff")?.value || "").trim();
+  if (upperVal) browser.runtime.sendMessage({ type: "SET_UPPER_CUTOFF", value: upperVal }).catch(() => {});
 
   list.replaceChildren();
 
@@ -133,12 +230,21 @@ async function renderQueue() {
     return;
   }
 
-  const cutoff = parseCutoffStr(document.getElementById("cutoff").value);
+  const cutoff          = parseCutoffStr(document.getElementById("cutoff").value);
+  const upperCutoffDate = upperVal ? parseCutoffStr(upperVal) : null;
+  const excludedSet     = new Set(res.excludedKeys || []);
 
+  // Compute effective next index, mirroring GET_NEXT logic in background
   let nextEffectiveIdx = -1;
   for (let i = res.index; i < res.queue.length; i++) {
     const tx = res.queue[i];
-    if (tx.date && new Date(tx.date) >= cutoff) { nextEffectiveIdx = i; break; }
+    if (!tx.date) continue;
+    const d = new Date(tx.date);
+    if (d < cutoff) continue;
+    if (upperCutoffDate && d > upperCutoffDate) continue;
+    if (excludedSet.has(txKeyForRow(tx))) continue;
+    nextEffectiveIdx = i;
+    break;
   }
   const nextLabel = nextEffectiveIdx >= 0 ? `#${nextEffectiveIdx + 1}` : "none";
 
@@ -147,26 +253,38 @@ async function renderQueue() {
   header.textContent = `${res.queue.length} transactions \u2014 next: ${nextLabel}`;
   list.appendChild(header);
 
-  [...res.queue].reverse().forEach((tx, i) => {
-    i = res.queue.length - 1 - i; // remap to original index for done/cutoff logic
+  [...res.queue].reverse().forEach((tx, revIdx) => {
+    const i      = res.queue.length - 1 - revIdx; // remap to original queue index
     const txDate = tx.date ? new Date(tx.date) : null;
-    const isCutoff = txDate && txDate < cutoff;
-    const isDone   = i < res.index;
+    const txKey  = txKeyForRow(tx);
 
-    const cls = "tx-row" + (isCutoff ? " tx-cutoff" : "") + (isDone ? " tx-done" : "");
+    const isCutoff   = txDate && txDate < cutoff;
+    const isAbove    = txDate && upperCutoffDate && txDate > upperCutoffDate;
+    const isDone     = i < res.index;
+    const isExcluded = excludedSet.has(txKey);
+
+    const cls = "tx-row"
+      + (isCutoff   ? " tx-cutoff"   : "")
+      + (isAbove    ? " tx-above"    : "")
+      + (isDone     ? " tx-done"     : "")
+      + (isExcluded ? " tx-excluded" : "");
 
     function makeRow(dateText, typeText, teamText) {
       const row = document.createElement("div");
       row.className = cls;
+      row.dataset.txKey = txKey;
       if (txDate) {
-        row.title = "Click to set as cutoff";
+        row.dataset.date = dateToISO(txDate);
+        row.title = "Click: set lower cutoff | Ctrl+click: exclude/include | Drag: set range";
         row.style.cursor = "pointer";
-        row.addEventListener("click", () => {
-          const el = document.getElementById("cutoff");
-          el.value = dateToISO(txDate);
-          el.focus(); el.select();
-        });
-        row.addEventListener("dblclick", async () => {
+        row.addEventListener("click", async e => {
+          if (dragOccurred) return;
+          if (e.ctrlKey) {
+            e.preventDefault();
+            browser.runtime.sendMessage({ type: "TOGGLE_EXCLUDE", key: txKey })
+              .then(() => renderQueue());
+            return;
+          }
           const value = dateToISO(txDate);
           document.getElementById("cutoff").value = value;
           await browser.storage.local.set({ cutoff: value });
@@ -182,10 +300,10 @@ async function renderQueue() {
       return { row, playersSpan: p };
     }
 
-    function addPlayerToken(span, last, cls) {
+    function addPlayerToken(span, text, tokenCls) {
       const s = document.createElement("span");
-      s.className = cls;
-      s.textContent = last;
+      s.className = tokenCls;
+      s.textContent = text;
       span.appendChild(s);
       span.appendChild(document.createTextNode(" "));
     }
@@ -232,12 +350,35 @@ async function renderQueue() {
   });
 }
 
-document.getElementById("save").onclick = async () => {
+// ── Cutoff inputs: save on blur or Enter ──────────────────────────────────────
+
+async function saveCutoff() {
   const raw       = document.getElementById("cutoff").value.trim();
   const converted = normalizeToISO(raw);
-
   document.getElementById("cutoff").value = converted;
   await browser.storage.local.set({ cutoff: converted });
+  renderQueue();
+}
+
+async function saveUpperCutoff() {
+  const val = document.getElementById("upperCutoff").value.trim();
+  if (!val) return;
+  await browser.storage.local.set({ upperCutoff: val });
+  browser.runtime.sendMessage({ type: "SET_UPPER_CUTOFF", value: val }).catch(() => {});
+  renderQueue();
+}
+
+document.getElementById("cutoff").addEventListener("blur",    saveCutoff);
+document.getElementById("upperCutoff").addEventListener("blur", saveUpperCutoff);
+
+document.getElementById("cutoff").addEventListener("keydown",    e => { if (e.key === "Enter") e.target.blur(); });
+document.getElementById("upperCutoff").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
+
+document.getElementById("nowBtn").onclick = async () => {
+  const now = dateToISO(new Date());
+  document.getElementById("upperCutoff").value = now;
+  await browser.storage.local.set({ upperCutoff: now });
+  browser.runtime.sendMessage({ type: "SET_UPPER_CUTOFF", value: now }).catch(() => {});
   renderQueue();
 };
 
@@ -257,6 +398,7 @@ document.getElementById("next").onclick = async () => {
 
 browser.runtime.onMessage.addListener((msg) => {
   if (msg.type === "QUEUE_UPDATED") renderQueue();
+  if (msg.type === "CUTOFF_SAVED")  loadCutoff().then(() => loadUpperCutoff().then(renderQueue));
 });
 
 // ── Theme ──
@@ -272,7 +414,7 @@ function applyTheme(theme) {
 
 document.getElementById("themeToggle").onclick = async () => {
   const isDark = document.body.classList.contains("dark");
-  const next = isDark ? "light" : "dark";
+  const next   = isDark ? "light" : "dark";
   await browser.storage.local.set({ theme: next });
   applyTheme(next);
 };
@@ -285,3 +427,5 @@ document.getElementById("githubBtn").onclick = () => {
 loadTheme();
 loadLeagueIds();
 loadCutoff().then(renderQueue);
+loadUpperCutoff();
+setupDragSelection();

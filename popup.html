@@ -126,6 +126,12 @@
       white-space: nowrap;
       flex: 0 0 105px;
     }
+    .cutoff-label {
+      font-size: 11px;
+      color: var(--label);
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
     input[type="text"] {
       flex: 1;
       font-size: 11px;
@@ -204,6 +210,10 @@
     .tx-row.tx-done   { color: var(--done-color); text-decoration: line-through; }
     .tx-row.tx-cutoff { color: var(--cutoff-color); }
     .tx-row.tx-cutoff.tx-done { color: var(--done-cutoff); }
+    .tx-row.tx-above  { color: var(--cutoff-color); }
+    .tx-row.tx-above.tx-done  { color: var(--done-cutoff); }
+    .tx-row.tx-excluded { opacity: 0.38; text-decoration: line-through; }
+    .tx-row.drag-selected { background: var(--row-hover-bg) !important; outline: 1px solid var(--link-color); }
     .tx-date    { flex: 0 0 80px; font-size: 10px; }
     .tx-type    { flex: 0 0 28px; font-weight: bold; text-align: center; font-size: 10px; }
     .tx-team    { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -212,6 +222,10 @@
     .drop { color: #ec1c25; }
     .tx-row.tx-cutoff .add,
     .tx-row.tx-cutoff .drop,
+    .tx-row.tx-above .add,
+    .tx-row.tx-above .drop,
+    .tx-row.tx-excluded .add,
+    .tx-row.tx-excluded .drop,
     .tx-row.tx-done .add,
     .tx-row.tx-done .drop { color: inherit; }
     .empty        { color: var(--empty-color); font-size: 11px; padding: 6px 2px; }
@@ -270,9 +284,11 @@
   <div class="section">
     <div class="section-label">Sync Settings</div>
     <div class="row">
-      <label>Cutoff (YYYY-MM-DD HH:MM):</label>
-      <input id="cutoff" type="text" placeholder="2026-03-29 00:00" style="width:120px;flex:none;">
-      <button class="btn-save" id="save">Save Cutoff</button>
+      <span class="cutoff-label">From:</span>
+      <input id="cutoff" type="text" placeholder="YYYY-MM-DD HH:MM" style="width:120px;flex:none;">
+      <span class="cutoff-label">To:</span>
+      <input id="upperCutoff" type="text" placeholder="YYYY-MM-DD HH:MM" style="width:120px;flex:none;">
+      <button class="btn-save" id="nowBtn">Now</button>
     </div>
     <button id="next">Next Transaction (F8)</button>
   </div>

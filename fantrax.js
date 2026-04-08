@@ -168,6 +168,7 @@ async function processNext() {
   const tx = await browser.runtime.sendMessage({ type: "GET_NEXT" });
 
   if (!tx) {
+    await browser.runtime.sendMessage({ type: "PROCESSING_DONE" });
     alert("No more transactions.");
     return;
   }
