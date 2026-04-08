@@ -232,5 +232,29 @@ browser.runtime.onMessage.addListener((msg) => {
   if (msg.type === "QUEUE_UPDATED") renderQueue();
 });
 
+// ── Theme ──
+async function loadTheme() {
+  const res = await browser.storage.local.get("theme");
+  applyTheme(res.theme || "light");
+}
+
+function applyTheme(theme) {
+  document.body.classList.toggle("dark", theme === "dark");
+  document.getElementById("themeToggle").textContent = theme === "dark" ? "☀️" : "🌙";
+}
+
+document.getElementById("themeToggle").onclick = async () => {
+  const isDark = document.body.classList.contains("dark");
+  const next = isDark ? "light" : "dark";
+  await browser.storage.local.set({ theme: next });
+  applyTheme(next);
+};
+
+// ── GitHub link ──
+document.getElementById("githubBtn").onclick = () => {
+  browser.tabs.create({ url: "https://github.com/wazam/fantasy-sync-extension" });
+};
+
+loadTheme();
 loadLeagueIds();
 loadCutoff().then(renderQueue);
