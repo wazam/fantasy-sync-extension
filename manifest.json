@@ -41,7 +41,10 @@
       "run_at": "document_idle"
     },
     {
-      "matches": ["*://www.fantrax.com/*claimDrop*"],
+      "matches": [
+        "*://www.fantrax.com/*claimDrop*",
+        "*://www.fantrax.com/*trade.go*"
+      ],
       "js": ["fantrax.js"],
       "run_at": "document_idle"
     }

@@ -1,22 +1,44 @@
 console.log("[EXT] content script injected:", location.href);
 
-const NAME_SUFFIXES = /^(jr\.?|sr\.?|ii|iii|iv|v)$/i;
+const NAME_SUFFIXES        = /^(jr\.?|sr\.?|ii|iii|iv|v)$/i;
+const NAME_PARTICLES       = new Set(["de", "del", "la", "le", "van", "von", "den"]);
+const TWO_WORD_PARTICLES   = ["de la", "de las", "de los", "van der", "van de"];
 
 function parseName(full) {
-  const parts = full.trim().split(" ");
+  const parts = full.trim().split(/\s+/);
 
-  // if the last word is a suffix (Jr., Sr., II, etc.) combine it with the
-  // preceding word so "Lance McCullers Jr." → last: "McCullers Jr."
+  // Strip trailing suffix (Jr., Sr., II, III, IV, V)
+  let suffix = null;
   if (parts.length > 2 && NAME_SUFFIXES.test(parts[parts.length - 1])) {
-    return {
-      first: parts.slice(0, -2).join(" "),
-      last:  parts.slice(-2).join(" ")
-    };
+    suffix = parts.pop();
   }
 
+  if (parts.length === 1) {
+    return { first: "", last: suffix ? `${parts[0]} ${suffix}` : parts[0] };
+  }
+
+  // Default: last word is the surname
+  let lastStart = parts.length - 1;
+
+  // Check for two-word particle immediately before the surname word
+  // e.g. "De La" in "Elly De La Cruz", "De Los" in "Deyvison De Los Santos"
+  if (lastStart >= 2) {
+    const twoWord = `${parts[lastStart - 2]} ${parts[lastStart - 1]}`.toLowerCase();
+    if (TWO_WORD_PARTICLES.includes(twoWord)) lastStart -= 2;
+  }
+
+  // Check for one-word particle (only if two-word didn't already extend)
+  // e.g. "De" in "Juan De Santos" — but NOT "De" inside "DeMartini" (already one token)
+  if (lastStart === parts.length - 1 && lastStart >= 2) {
+    if (NAME_PARTICLES.has(parts[lastStart - 1].toLowerCase())) lastStart -= 1;
+  }
+
+  const lastParts = parts.slice(lastStart);
+  if (suffix) lastParts.push(suffix);
+
   return {
-    first: parts.slice(0, -1).join(" "),
-    last:  parts.slice(-1)[0]
+    first: parts.slice(0, lastStart).join(" "),
+    last:  lastParts.join(" ")
   };
 }
 
@@ -54,16 +76,53 @@ function extractTransactions() {
   const results = [];
 
   rows.forEach(row => {
-    // querySelectorAll gets ALL detail spans — ADD_DROP rows have two
     const details = row.querySelectorAll(".transaction-details");
     if (!details.length) return;
 
-    let add = null;
-    let drop = null;
-    let team = null;
+    const detailsArr = Array.from(details);
+    const rawIdx     = parseInt(row.getAttribute("data-idx"), 10);
+    const idx        = isNaN(rawIdx) ? 0 : rawIdx;
 
-    details.forEach(detail => {
-      const text = detail.innerText;
+    // ── Trade rows ──────────────────────────────────────────────────────────
+    if (detailsArr.some(d => d.innerText.includes(" traded "))) {
+      // Skip "Trade Accepted" (pending); only queue "Trade Processed"
+      const typeSpan = row.querySelector(".typeInfo span:last-child");
+      if (!typeSpan?.innerText.toLowerCase().includes("processed")) return;
+
+      const legs = [];
+      detailsArr.forEach(detail => {
+        const playerEl = detail.querySelector(".truncate a");
+        if (!playerEl) return;
+        const teamEls  = detail.querySelectorAll(".teamName");
+        if (teamEls.length < 2) return;
+        legs.push({
+          from:   teamEls[0].innerText.trim(),
+          player: parseName(playerEl.innerText.trim()),
+          to:     teamEls[1].innerText.trim()
+        });
+      });
+
+      if (!legs.length) return;
+
+      const teams = [...new Set(legs.flatMap(l => [l.from, l.to]))];
+      const sides = Object.fromEntries(teams.map(t => [t, []]));
+      legs.forEach(l => sides[l.from].push(l.player));
+
+      results.push({
+        type: "TRADE",
+        team: teams.join(" \u21d4 "),   // ⇔
+        teams, sides,
+        add: null, drop: null,
+        date: parseDate(row), idx
+      });
+      return;
+    }
+
+    // ── Add / Drop rows ─────────────────────────────────────────────────────
+    let add = null, drop = null, team = null;
+
+    detailsArr.forEach(detail => {
+      const text    = detail.innerText;
       const rowTeam = detail.querySelector(".teamName")?.innerText.trim();
       if (rowTeam) team = rowTeam;
 
@@ -71,7 +130,6 @@ function extractTransactions() {
         const m = text.match(/dropped (.*?),/);
         if (m) drop = parseName(m[1]);
       }
-
       if (text.includes("added")) {
         const m = text.match(/added (.*?),/);
         if (m) add = parseName(m[1]);
@@ -80,21 +138,11 @@ function extractTransactions() {
 
     let type = null;
     if (add && drop) type = "ADD_DROP";
-    else if (add) type = "ADD";
-    else if (drop) type = "DROP";
-
+    else if (add)    type = "ADD";
+    else if (drop)   type = "DROP";
     if (!type) return;
 
-    const idx = parseInt(row.getAttribute("data-idx"), 10);
-
-    results.push({
-      type,
-      team,
-      add,
-      drop,
-      date: parseDate(row),
-      idx: isNaN(idx) ? 0 : idx
-    });
+    results.push({ type, team, add, drop, date: parseDate(row), idx });
   });
 
   return results;

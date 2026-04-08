@@ -135,9 +135,16 @@ async function renderQueue() {
 
   const cutoff = parseCutoffStr(document.getElementById("cutoff").value);
 
+  let nextEffectiveIdx = -1;
+  for (let i = res.index; i < res.queue.length; i++) {
+    const tx = res.queue[i];
+    if (tx.date && new Date(tx.date) >= cutoff) { nextEffectiveIdx = i; break; }
+  }
+  const nextLabel = nextEffectiveIdx >= 0 ? `#${nextEffectiveIdx + 1}` : "none";
+
   const header = document.createElement("div");
   header.className = "queue-header";
-  header.textContent = `${res.queue.length} transactions \u2014 next: #${res.index + 1}`;
+  header.textContent = `${res.queue.length} transactions \u2014 next: ${nextLabel}`;
   list.appendChild(header);
 
   [...res.queue].reverse().forEach((tx, i) => {
@@ -146,62 +153,82 @@ async function renderQueue() {
     const isCutoff = txDate && txDate < cutoff;
     const isDone   = i < res.index;
 
-    const row = document.createElement("div");
-    row.className = "tx-row" + (isCutoff ? " tx-cutoff" : "") + (isDone ? " tx-done" : "");
-    if (txDate) {
-      row.title = "Click to set as cutoff";
-      row.style.cursor = "pointer";
-      row.addEventListener("click", () => {
-        const cutoffEl = document.getElementById("cutoff");
-        cutoffEl.value = dateToISO(txDate);
-        cutoffEl.focus();
-        cutoffEl.select();
-      });
-      row.addEventListener("dblclick", async () => {
-        const value = dateToISO(txDate);
-        document.getElementById("cutoff").value = value;
-        await browser.storage.local.set({ cutoff: value });
-        renderQueue();
-      });
+    const cls = "tx-row" + (isCutoff ? " tx-cutoff" : "") + (isDone ? " tx-done" : "");
+
+    function makeRow(dateText, typeText, teamText) {
+      const row = document.createElement("div");
+      row.className = cls;
+      if (txDate) {
+        row.title = "Click to set as cutoff";
+        row.style.cursor = "pointer";
+        row.addEventListener("click", () => {
+          const el = document.getElementById("cutoff");
+          el.value = dateToISO(txDate);
+          el.focus(); el.select();
+        });
+        row.addEventListener("dblclick", async () => {
+          const value = dateToISO(txDate);
+          document.getElementById("cutoff").value = value;
+          await browser.storage.local.set({ cutoff: value });
+          renderQueue();
+        });
+      }
+      const d = document.createElement("span"); d.className = "tx-date"; d.textContent = dateText;
+      const t = document.createElement("span"); t.className = "tx-type"; t.textContent = typeText;
+      const m = document.createElement("span"); m.className = "tx-team"; m.textContent = teamText;
+      if (teamText) m.title = teamText;
+      const p = document.createElement("span"); p.className = "tx-players";
+      row.appendChild(d); row.appendChild(t); row.appendChild(m); row.appendChild(p);
+      return { row, playersSpan: p };
     }
 
-    const typeLabel = tx.type === "ADD_DROP" ? "A+D" : (tx.type || "?");
-
-    const dateSpan = document.createElement("span");
-    dateSpan.className = "tx-date";
-    dateSpan.textContent = formatDate(tx.date);
-
-    const typeSpan = document.createElement("span");
-    typeSpan.className = "tx-type";
-    typeSpan.textContent = typeLabel;
-
-    const teamSpan = document.createElement("span");
-    teamSpan.className = "tx-team";
-    teamSpan.textContent = tx.team || "";
-
-    const playersSpan = document.createElement("span");
-    playersSpan.className = "tx-players";
-    if (tx.add) {
+    function addPlayerToken(span, last, cls) {
       const s = document.createElement("span");
-      s.className = "add";
-      s.textContent = `+${tx.add.last}`;
-      playersSpan.appendChild(s);
-    }
-    if (tx.add && tx.drop) {
-      playersSpan.appendChild(document.createTextNode(" "));
-    }
-    if (tx.drop) {
-      const s = document.createElement("span");
-      s.className = "drop";
-      s.textContent = `-${tx.drop.last}`;
-      playersSpan.appendChild(s);
+      s.className = cls;
+      s.textContent = last;
+      span.appendChild(s);
+      span.appendChild(document.createTextNode(" "));
     }
 
-    row.appendChild(dateSpan);
-    row.appendChild(typeSpan);
-    row.appendChild(teamSpan);
-    row.appendChild(playersSpan);
-    list.appendChild(row);
+    if (tx.type === "TRADE" && tx.teams && tx.sides) {
+      const [teamA, teamB] = tx.teams;
+      const aGives = tx.sides[teamA] || [];
+      const bGives = tx.sides[teamB] || [];
+
+      // Row 1 — Team A: receives bGives (+), gives aGives (-)
+      const r1 = makeRow(formatDate(tx.date), "TRD", teamA);
+      bGives.forEach(p => addPlayerToken(r1.playersSpan, `+${p.last}`, "add"));
+      aGives.forEach(p => addPlayerToken(r1.playersSpan, `-${p.last}`, "drop"));
+      r1.playersSpan.title = [
+        ...bGives.map(p => `+${p.first} ${p.last}`),
+        ...aGives.map(p => `-${p.first} ${p.last}`)
+      ].join("  ");
+      list.appendChild(r1.row);
+
+      // Row 2 — Team B: receives aGives (+), gives bGives (-)
+      const r2 = makeRow("", "", teamB);
+      aGives.forEach(p => addPlayerToken(r2.playersSpan, `+${p.last}`, "add"));
+      bGives.forEach(p => addPlayerToken(r2.playersSpan, `-${p.last}`, "drop"));
+      r2.playersSpan.title = [
+        ...aGives.map(p => `+${p.first} ${p.last}`),
+        ...bGives.map(p => `-${p.first} ${p.last}`)
+      ].join("  ");
+      list.appendChild(r2.row);
+
+    } else {
+      const typeLabel = tx.type === "ADD_DROP" ? "A+D" : (tx.type || "?");
+      const { row, playersSpan } = makeRow(formatDate(tx.date), typeLabel, tx.team || "");
+
+      if (tx.add)  addPlayerToken(playersSpan, `+${tx.add.last}`,  "add");
+      if (tx.drop) addPlayerToken(playersSpan, `-${tx.drop.last}`, "drop");
+      const playerTitle = [
+        tx.add  ? `+${tx.add.first} ${tx.add.last}`   : null,
+        tx.drop ? `-${tx.drop.first} ${tx.drop.last}` : null
+      ].filter(Boolean).join("  ");
+      if (playerTitle) playersSpan.title = playerTitle;
+
+      list.appendChild(row);
+    }
   });
 }
 

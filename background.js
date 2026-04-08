@@ -1,9 +1,21 @@
 let queue = [];
 let index = 0;
+let prevIndex = 0;
 const seenKeys = new Set();
 
 function txKey(tx) {
   const t = tx.date ? new Date(tx.date).getTime() : 0;
+
+  if (tx.type === "TRADE") {
+    // key = sorted list of all player names + timestamp (order-independent)
+    const players = Object.values(tx.sides || {})
+      .flat()
+      .map(p => `${p.first}|${p.last}`)
+      .sort()
+      .join(",");
+    return `TRADE||${players}||${t}`;
+  }
+
   return [
     tx.team  || "",
     tx.type  || "",
@@ -59,10 +71,17 @@ browser.runtime.onMessage.addListener((msg) => {
     return Promise.resolve({ queue, index });
   }
 
+  if (msg.type === "REWIND_QUEUE") {
+    index = prevIndex;
+    updateBadge();
+    return Promise.resolve();
+  }
+
   if (msg.type === "GET_NEXT") {
     return (async () => {
 
       const cutoff = await getCutoffDate();
+      prevIndex = index;
 
       while (index < queue.length) {
         const tx = queue[index++];
