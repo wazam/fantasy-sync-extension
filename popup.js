@@ -69,9 +69,10 @@ async function loadLeagueIds() {
 }
 
 function updateLinkButtons(espnId, fantraxId) {
-  const btnEspn         = document.getElementById("linkEspn");
+  const btnEspn          = document.getElementById("linkEspn");
   const btnFantraxRecent = document.getElementById("linkFantraxRecent");
-  const btnFantraxClaim = document.getElementById("linkFantraxClaim");
+  const btnFantraxClaim  = document.getElementById("linkFantraxClaim");
+  const btnFantraxTrade  = document.getElementById("linkFantraxTrade");
 
   if (espnId) {
     btnEspn.classList.remove("disabled");
@@ -92,11 +93,17 @@ function updateLinkButtons(espnId, fantraxId) {
     btnFantraxClaim.onclick = () => browser.tabs.create({
       url: `https://www.fantrax.com/newui/fantasy/claimDrop.go?leagueId=${fantraxId}`
     });
+    btnFantraxTrade.classList.remove("disabled");
+    btnFantraxTrade.onclick = () => browser.tabs.create({
+      url: `https://www.fantrax.com/newui/fantasy/trade.go?leagueId=${fantraxId}`
+    });
   } else {
     btnFantraxRecent.classList.add("disabled");
     btnFantraxRecent.onclick = () => alert("Save your Fantrax League ID first.");
     btnFantraxClaim.classList.add("disabled");
     btnFantraxClaim.onclick = () => alert("Save your Fantrax League ID first.");
+    btnFantraxTrade.classList.add("disabled");
+    btnFantraxTrade.onclick = () => alert("Save your Fantrax League ID first.");
   }
 }
 

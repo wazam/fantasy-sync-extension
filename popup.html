@@ -53,15 +53,23 @@
       flex-direction: column;
       gap: 3px;
     }
+    .link-row {
+      display: flex;
+      gap: 3px;
+    }
     .link-btn {
+      flex: 1;
       font-size: 11px;
-      padding: 5px 8px;
+      padding: 5px 4px;
       cursor: pointer;
-      text-align: left;
+      text-align: center;
       background: #f5f5f5;
       border: 1px solid #ccc;
       border-radius: 3px;
       color: #1a73e8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .link-btn:hover { background: #e8f0fe; border-color: #1a73e8; }
     .link-btn.disabled { color: #aaa; cursor: default; background: #f9f9f9; border-color: #e0e0e0; }
@@ -118,13 +126,11 @@
     <div class="section-label">League IDs</div>
     <div class="row">
       <label>ESPN League ID:</label>
-      <input id="espnLeagueId" type="text" placeholder="numeric ID from ESPN URL">
+      <input id="espnLeagueId" type="text" placeholder="numeric ID from ESPN URL" style="width:185px;flex:none;">
     </div>
     <div class="row">
       <label>Fantrax League ID:</label>
-      <input id="fantraxLeagueId" type="text" placeholder="alphanumeric ID from Fantrax URL">
-    </div>
-    <div class="row">
+      <input id="fantraxLeagueId" type="text" placeholder="alphanumeric ID from Fantrax URL" style="width:185px;flex:none;">
       <button class="btn-save" id="saveLeagues">Save IDs</button>
     </div>
   </div>
@@ -133,9 +139,14 @@
   <div class="section">
     <div class="section-label">Quick Links</div>
     <div class="links">
-      <button class="link-btn" id="linkEspn">&#9654; ESPN Recent Activity</button>
-      <button class="link-btn" id="linkFantraxRecent">&#9654; Fantrax Recent Activity</button>
-      <button class="link-btn" id="linkFantraxClaim">&#9654; Fantrax Commissioner Claim/Drop</button>
+      <div class="link-row">
+        <button class="link-btn" id="linkEspn">&#9654; ESPN Recent Activity</button>
+        <button class="link-btn" id="linkFantraxRecent">&#9654; Fantrax Recent Activity</button>
+      </div>
+      <div class="link-row">
+        <button class="link-btn" id="linkFantraxClaim">&#9654; Fantrax Claim/Drop</button>
+        <button class="link-btn" id="linkFantraxTrade">&#9654; Fantrax Trade</button>
+      </div>
     </div>
   </div>
 
@@ -144,9 +155,7 @@
     <div class="section-label">Sync Settings</div>
     <div class="row">
       <label>Cutoff (YYYY-MM-DD HH:MM):</label>
-      <input id="cutoff" type="text" placeholder="2026-03-29 00:00">
-    </div>
-    <div class="row">
+      <input id="cutoff" type="text" placeholder="2026-03-29 00:00" style="width:120px;flex:none;">
       <button class="btn-save" id="save">Save Cutoff</button>
     </div>
     <button id="next">Next Transaction (F8)</button>
