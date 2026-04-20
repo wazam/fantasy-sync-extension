@@ -3,10 +3,21 @@ const ESPN_MONTHS = {
   Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12
 };
 
-// Converts "Mon Apr 6 6:19 am" → "2026-04-06 06:19"
-// Returns original string unchanged if it doesn't match ESPN format
+// Converts various date shorthands to "YYYY-MM-DD HH:MM".
+// Supported inputs:
+//   "MM-DD HH:MM"          → current year prepended
+//   "Mon Apr 6 6:19 am"    → ESPN activity format
+// Returns original string unchanged if nothing matches.
 function normalizeToISO(str) {
-  const m = str.trim().match(/^(?:[A-Za-z]{3}\s+)?([A-Za-z]{3})\s+(\d{1,2})\s+(\d{1,2}):(\d{2})\s*(am|pm)$/i);
+  // "MM-DD HH:MM" shorthand
+  const s = str.trim();
+  const mShort = s.match(/^(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{2})$/);
+  if (mShort) {
+    const year = new Date().getFullYear();
+    return `${year}-${mShort[1].padStart(2,"0")}-${mShort[2].padStart(2,"0")} ${mShort[3].padStart(2,"0")}:${mShort[4]}`;
+  }
+
+  const m = s.match(/^(?:[A-Za-z]{3}\s+)?([A-Za-z]{3})\s+(\d{1,2})\s+(\d{1,2}):(\d{2})\s*(am|pm)$/i);
   if (!m) return str;
 
   const monthNum = ESPN_MONTHS[m[1]];
@@ -28,7 +39,7 @@ function normalizeToISO(str) {
 }
 
 function parseCutoffStr(str) {
-  const parts = (str || "2026-03-29").trim().split(" ");
+  const parts = (str || "2026-03-24 20:30").trim().split(" ");
   const [y, m, d] = parts[0].split("-").map(Number);
   let hour = 0, min = 0;
   if (parts[1]) {
@@ -79,26 +90,53 @@ function txKeyForRow(tx) {
 }
 
 async function loadLeagueIds() {
-  const res = await browser.storage.local.get(["espnLeagueId", "fantraxLeagueId"]);
+  const res = await browser.storage.local.get(["espnLeagueId", "fantraxLeagueId", "rosterSize", "ilSlots"]);
   if (res.espnLeagueId)    document.getElementById("espnLeagueId").value    = res.espnLeagueId;
   if (res.fantraxLeagueId) document.getElementById("fantraxLeagueId").value = res.fantraxLeagueId;
+  if (res.rosterSize != null) document.getElementById("rosterSize").value = res.rosterSize;
+  if (res.ilSlots   != null) document.getElementById("ilSlots").value    = res.ilSlots;
+  updateFantraxRosterSize();
   updateLinkButtons(res.espnLeagueId, res.fantraxLeagueId);
 }
 
 function updateLinkButtons(espnId, fantraxId) {
-  const btnEspn          = document.getElementById("linkEspn");
-  const btnFantraxRecent = document.getElementById("linkFantraxRecent");
-  const btnFantraxClaim  = document.getElementById("linkFantraxClaim");
-  const btnFantraxTrade  = document.getElementById("linkFantraxTrade");
+  const btnEspn            = document.getElementById("linkEspn");
+  const btnEspnPage2       = document.getElementById("linkEspnPage2");
+  const btnEspnDraft       = document.getElementById("linkEspnDraft");
+  const btnEspnSettings    = document.getElementById("espnSettingsBtn");
+  const btnFantraxRecent   = document.getElementById("linkFantraxRecent");
+  const btnFantraxClaim    = document.getElementById("linkFantraxClaim");
+  const btnFantraxTrade    = document.getElementById("linkFantraxTrade");
+  const btnFantraxImport   = document.getElementById("linkFantraxImport");
+  const btnFantraxTrending = document.getElementById("linkFantraxTrending");
+  const btnFantraxSettings = document.getElementById("fantraxSettingsBtn");
 
   if (espnId) {
     btnEspn.classList.remove("disabled");
     btnEspn.onclick = () => browser.tabs.create({
       url: `https://fantasy.espn.com/baseball/recentactivity?leagueId=${espnId}`
     });
+    btnEspnPage2.classList.remove("disabled");
+    btnEspnPage2.onclick = () => browser.tabs.create({
+      url: `https://fantasy.espn.com/baseball/recentactivity?leagueId=${espnId}&page=333&startDate=20260203`
+    });
+    btnEspnDraft.classList.remove("disabled");
+    btnEspnDraft.onclick = () => browser.tabs.create({
+      url: `https://fantasy.espn.com/baseball/league/draftrecap?leagueId=${espnId}`
+    });
+    btnEspnSettings.disabled = false;
+    btnEspnSettings.onclick = () => browser.tabs.create({
+      url: `https://fantasy.espn.com/baseball/league/settings?leagueId=${espnId}`
+    });
   } else {
     btnEspn.classList.add("disabled");
     btnEspn.onclick = () => alert("Save your ESPN League ID first.");
+    btnEspnPage2.classList.add("disabled");
+    btnEspnPage2.onclick = () => alert("Save your ESPN League ID first.");
+    btnEspnDraft.classList.add("disabled");
+    btnEspnDraft.onclick = () => alert("Save your ESPN League ID first.");
+    btnEspnSettings.disabled = true;
+    btnEspnSettings.onclick = null;
   }
 
   if (fantraxId) {
@@ -114,6 +152,18 @@ function updateLinkButtons(espnId, fantraxId) {
     btnFantraxTrade.onclick = () => browser.tabs.create({
       url: `https://www.fantrax.com/newui/fantasy/trade.go?leagueId=${fantraxId}`
     });
+    btnFantraxImport.classList.remove("disabled");
+    btnFantraxImport.onclick = () => browser.tabs.create({
+      url: `https://www.fantrax.com/newui/fantasy/playerImport.go?leagueId=${fantraxId}`
+    });
+    btnFantraxTrending.classList.remove("disabled");
+    btnFantraxTrending.onclick = () => browser.tabs.create({
+      url: `https://www.fantrax.com/fantasy/league/${fantraxId}/players;sortType=OVERVIEW_PLUS_MINUS_PERCENT_OWNED_2;maxResultsPerPage=50`
+    });
+    btnFantraxSettings.disabled = false;
+    btnFantraxSettings.onclick = () => browser.tabs.create({
+      url: `https://www.fantrax.com/newui/fantasy/createLeague.go?goto=3&leagueId=${fantraxId}`
+    });
   } else {
     btnFantraxRecent.classList.add("disabled");
     btnFantraxRecent.onclick = () => alert("Save your Fantrax League ID first.");
@@ -121,26 +171,140 @@ function updateLinkButtons(espnId, fantraxId) {
     btnFantraxClaim.onclick = () => alert("Save your Fantrax League ID first.");
     btnFantraxTrade.classList.add("disabled");
     btnFantraxTrade.onclick = () => alert("Save your Fantrax League ID first.");
+    btnFantraxImport.classList.add("disabled");
+    btnFantraxImport.onclick = () => alert("Save your Fantrax League ID first.");
+    btnFantraxTrending.classList.add("disabled");
+    btnFantraxTrending.onclick = () => alert("Save your Fantrax League ID first.");
+    btnFantraxSettings.disabled = true;
+    btnFantraxSettings.onclick = null;
   }
 }
 
-document.getElementById("saveLeagues").onclick = async () => {
-  const espnId    = document.getElementById("espnLeagueId").value.trim();
-  const fantraxId = document.getElementById("fantraxLeagueId").value.trim();
-  await browser.storage.local.set({ espnLeagueId: espnId, fantraxLeagueId: fantraxId });
-  updateLinkButtons(espnId, fantraxId);
-};
+function extractEspnId(raw) {
+  // Accept a full ESPN URL and pull leagueId=DIGITS, or a bare numeric ID
+  const fromUrl = raw.match(/[?&]leagueId=(\d+)/);
+  if (fromUrl) return fromUrl[1];
+  if (/^\d+$/.test(raw)) return raw;
+  return null;
+}
+
+function extractFantraxId(raw) {
+  // Accept a full Fantrax URL — check path segment "league/ID" first,
+  // then query param "leagueId=ID", or a bare alphanumeric ID
+  const fromPath  = raw.match(/\/league\/([a-z0-9]+)/i);
+  if (fromPath) return fromPath[1];
+  const fromQuery = raw.match(/[?&]leagueId=([a-z0-9]+)/i);
+  if (fromQuery) return fromQuery[1];
+  if (/^[a-z0-9]+$/i.test(raw)) return raw;
+  return null;
+}
+
+document.getElementById("espnLeagueId").addEventListener("blur", async () => {
+  const el  = document.getElementById("espnLeagueId");
+  const raw = el.value.trim();
+  if (!raw) {
+    await browser.storage.local.remove("espnLeagueId");
+    const fantraxId = (await browser.storage.local.get("fantraxLeagueId")).fantraxLeagueId || "";
+    updateLinkButtons("", fantraxId);
+    return;
+  }
+  const id = extractEspnId(raw);
+  if (!id) {
+    alert(`Could not find a numeric ESPN League ID in:\n"${raw}"\n\nPaste an ESPN URL containing leagueId=... or enter the numeric ID directly.`);
+    const prev = (await browser.storage.local.get("espnLeagueId")).espnLeagueId || "";
+    el.value = prev;
+    return;
+  }
+  el.value = id;
+  const fantraxId = (await browser.storage.local.get("fantraxLeagueId")).fantraxLeagueId || "";
+  await browser.storage.local.set({ espnLeagueId: id });
+  updateLinkButtons(id, fantraxId);
+});
+
+document.getElementById("espnLeagueId").addEventListener("keydown", e => {
+  if (e.key === "Enter") e.target.blur();
+});
+
+document.getElementById("fantraxLeagueId").addEventListener("blur", async () => {
+  const el  = document.getElementById("fantraxLeagueId");
+  const raw = el.value.trim();
+  if (!raw) {
+    await browser.storage.local.remove("fantraxLeagueId");
+    const espnId = (await browser.storage.local.get("espnLeagueId")).espnLeagueId || "";
+    updateLinkButtons(espnId, "");
+    return;
+  }
+  const id = extractFantraxId(raw);
+  if (!id) {
+    alert(`Could not find a Fantrax League ID in:\n"${raw}"\n\nPaste a Fantrax URL containing /league/... or leagueId=... or enter the alphanumeric ID directly.`);
+    const prev = (await browser.storage.local.get("fantraxLeagueId")).fantraxLeagueId || "";
+    el.value = prev;
+    return;
+  }
+  el.value = id;
+  const espnId = (await browser.storage.local.get("espnLeagueId")).espnLeagueId || "";
+  await browser.storage.local.set({ fantraxLeagueId: id });
+  updateLinkButtons(espnId, id);
+});
+
+document.getElementById("fantraxLeagueId").addEventListener("keydown", e => {
+  if (e.key === "Enter") e.target.blur();
+});
+
+document.getElementById("espnHomeBtn").addEventListener("click", async () => {
+  const { espnLeagueId } = await browser.storage.local.get("espnLeagueId");
+  const url = espnLeagueId
+    ? `https://fantasy.espn.com/baseball/league?leagueId=${espnLeagueId}`
+    : "https://www.espn.com/fantasy/baseball/";
+  browser.tabs.create({ url });
+});
+
+document.getElementById("fantraxHomeBtn").addEventListener("click", async () => {
+  const { fantraxLeagueId } = await browser.storage.local.get("fantraxLeagueId");
+  const url = fantraxLeagueId
+    ? `https://www.fantrax.com/fantasy/league/${fantraxLeagueId}/home`
+    : "https://www.fantrax.com/fantasy/league";
+  browser.tabs.create({ url });
+});
+
+// ── League settings: Teams / Roster / IL ──────────────────────────────────────
+
+function updateFantraxRosterSize() {
+  const roster = parseInt(document.getElementById("rosterSize").value, 10) || 0;
+  const il     = parseInt(document.getElementById("ilSlots").value,    10) || 0;
+  const total  = roster + il;
+  document.getElementById("fantraxRosterSize").value = (roster || il) ? total : "";
+}
+
+function makeNumericSettingSaver(id, storageKey) {
+  document.getElementById(id).addEventListener("blur", async () => {
+    const el  = document.getElementById(id);
+    const raw = el.value.trim();
+    if (!raw) { await browser.storage.local.remove(storageKey); updateFantraxRosterSize(); return; }
+    const n = parseInt(raw, 10);
+    if (isNaN(n) || n < 0) { el.value = ""; await browser.storage.local.remove(storageKey); updateFantraxRosterSize(); return; }
+    el.value = n;
+    await browser.storage.local.set({ [storageKey]: n });
+    updateFantraxRosterSize();
+  });
+  document.getElementById(id).addEventListener("keydown", e => {
+    if (e.key === "Enter") e.target.blur();
+  });
+}
+
+makeNumericSettingSaver("rosterSize", "rosterSize");
+makeNumericSettingSaver("ilSlots",    "ilSlots");
 
 async function loadCutoff() {
   const res = await browser.storage.local.get("cutoff");
-  document.getElementById("cutoff").value = res.cutoff || "2026-03-29 00:00";
+  document.getElementById("cutoff").value = res.cutoff || "";
 }
 
 async function loadUpperCutoff() {
   const res = await browser.storage.local.get("upperCutoff");
-  const val = res.upperCutoff || dateToISO(new Date());
+  const val = res.upperCutoff || "";
   document.getElementById("upperCutoff").value = val;
-  browser.runtime.sendMessage({ type: "SET_UPPER_CUTOFF", value: val }).catch(() => {});
+  if (val) browser.runtime.sendMessage({ type: "SET_UPPER_CUTOFF", value: val }).catch(() => {});
 }
 
 // ── Drag selection ────────────────────────────────────────────────────────────
@@ -180,7 +344,7 @@ function setupDragSelection() {
 
   list.addEventListener("mousedown", e => {
     const row = e.target.closest(".tx-row");
-    if (!row || !row.dataset.date || e.ctrlKey) return;
+    if (!row || !row.dataset.date) return;
     dragState = { startRow: row, startX: e.clientX, startY: e.clientY, dragging: false };
     e.preventDefault(); // prevent text selection during drag
   });
@@ -210,10 +374,28 @@ function setupDragSelection() {
   });
 }
 
+// "F. LastName" — first initial + period + last name
+function shortName(p) {
+  const initial = p.first ? p.first[0] + ". " : "";
+  return initial + p.last;
+}
+
 // ── Queue rendering ───────────────────────────────────────────────────────────
 
+let queueFirstRender = true;
+let scrollSaveTimer  = null;
+
+document.getElementById("queue-list").addEventListener("scroll", () => {
+  clearTimeout(scrollSaveTimer);
+  scrollSaveTimer = setTimeout(() => {
+    const top = document.getElementById("queue-list").scrollTop;
+    browser.storage.local.set({ queueScrollTop: top });
+  }, 300);
+});
+
 async function renderQueue() {
-  const list = document.getElementById("queue-list");
+  const list      = document.getElementById("queue-list");
+  const scrollTop = list.scrollTop; // preserve scroll position across re-renders
   const res  = await browser.runtime.sendMessage({ type: "GET_QUEUE" });
 
   // Keep background upper cutoff in sync with whatever the input shows
@@ -223,6 +405,8 @@ async function renderQueue() {
   list.replaceChildren();
 
   if (!res || !res.queue || !res.queue.length) {
+    const queueHeaderLabel = document.getElementById("queue-header-label");
+    if (queueHeaderLabel) queueHeaderLabel.textContent = "Transaction Queue";
     const empty = document.createElement("div");
     empty.className = "empty";
     empty.textContent = "No transactions loaded yet.";
@@ -230,8 +414,9 @@ async function renderQueue() {
     return;
   }
 
-  const cutoff          = parseCutoffStr(document.getElementById("cutoff").value);
-  const upperCutoffDate = upperVal ? parseCutoffStr(upperVal) : null;
+  const cutoffVal       = document.getElementById("cutoff").value.trim();
+  const cutoff          = cutoffVal ? parseCutoffStr(cutoffVal) : null;
+  const upperCutoffDate = upperVal  ? parseCutoffStr(upperVal)  : null;
   const excludedSet     = new Set(res.excludedKeys || []);
 
   // Compute effective next index, mirroring GET_NEXT logic in background
@@ -240,7 +425,7 @@ async function renderQueue() {
     const tx = res.queue[i];
     if (!tx.date) continue;
     const d = new Date(tx.date);
-    if (d < cutoff) continue;
+    if (cutoff && d < cutoff) continue;
     if (upperCutoffDate && d > upperCutoffDate) continue;
     if (excludedSet.has(txKeyForRow(tx))) continue;
     nextEffectiveIdx = i;
@@ -248,20 +433,20 @@ async function renderQueue() {
   }
   const nextLabel = nextEffectiveIdx >= 0 ? `#${nextEffectiveIdx + 1}` : "none";
 
-  const header = document.createElement("div");
-  header.className = "queue-header";
-  header.textContent = `${res.queue.length} transactions \u2014 next: ${nextLabel}`;
-  list.appendChild(header);
+  const queueHeaderLabel = document.getElementById("queue-header-label");
+  if (queueHeaderLabel) {
+    queueHeaderLabel.textContent = `${res.queue.length} transactions \u2014 next: ${nextLabel}`;
+  }
 
   [...res.queue].reverse().forEach((tx, revIdx) => {
     const i      = res.queue.length - 1 - revIdx; // remap to original queue index
     const txDate = tx.date ? new Date(tx.date) : null;
     const txKey  = txKeyForRow(tx);
 
-    const isCutoff   = txDate && txDate < cutoff;
+    const isCutoff   = txDate && cutoff && txDate < cutoff;
     const isAbove    = txDate && upperCutoffDate && txDate > upperCutoffDate;
-    const isDone     = i < res.index;
     const isExcluded = excludedSet.has(txKey);
+    const isDone     = i < res.index && !isCutoff && !isAbove && !isExcluded;
 
     const cls = "tx-row"
       + (isCutoff   ? " tx-cutoff"   : "")
@@ -312,11 +497,13 @@ async function renderQueue() {
       const [teamA, teamB] = tx.teams;
       const aGives = tx.sides[teamA] || [];
       const bGives = tx.sides[teamB] || [];
+      const tradePlayers = [...aGives, ...bGives].map(p => `${p.first} ${p.last}`).join(" ");
 
       // Row 1 — Team A: receives bGives (+), gives aGives (-)
       const r1 = makeRow(formatDate(tx.date), "TRD", teamA);
-      bGives.forEach(p => addPlayerToken(r1.playersSpan, `+${p.last}`, "add"));
-      aGives.forEach(p => addPlayerToken(r1.playersSpan, `-${p.last}`, "drop"));
+      r1.row.dataset.players = tradePlayers;
+      bGives.forEach(p => addPlayerToken(r1.playersSpan, `+${shortName(p)}`, "add"));
+      aGives.forEach(p => addPlayerToken(r1.playersSpan, `-${shortName(p)}`, "drop"));
       r1.playersSpan.title = [
         ...bGives.map(p => `+${p.first} ${p.last}`),
         ...aGives.map(p => `-${p.first} ${p.last}`)
@@ -325,8 +512,9 @@ async function renderQueue() {
 
       // Row 2 — Team B: receives aGives (+), gives bGives (-)
       const r2 = makeRow("", "", teamB);
-      aGives.forEach(p => addPlayerToken(r2.playersSpan, `+${p.last}`, "add"));
-      bGives.forEach(p => addPlayerToken(r2.playersSpan, `-${p.last}`, "drop"));
+      r2.row.dataset.players = tradePlayers;
+      aGives.forEach(p => addPlayerToken(r2.playersSpan, `+${shortName(p)}`, "add"));
+      bGives.forEach(p => addPlayerToken(r2.playersSpan, `-${shortName(p)}`, "drop"));
       r2.playersSpan.title = [
         ...aGives.map(p => `+${p.first} ${p.last}`),
         ...bGives.map(p => `-${p.first} ${p.last}`)
@@ -336,9 +524,13 @@ async function renderQueue() {
     } else {
       const typeLabel = tx.type === "ADD_DROP" ? "A+D" : (tx.type || "?");
       const { row, playersSpan } = makeRow(formatDate(tx.date), typeLabel, tx.team || "");
+      row.dataset.players = [
+        tx.add  ? `${tx.add.first} ${tx.add.last}`   : null,
+        tx.drop ? `${tx.drop.first} ${tx.drop.last}` : null
+      ].filter(Boolean).join(" ");
 
-      if (tx.add)  addPlayerToken(playersSpan, `+${tx.add.last}`,  "add");
-      if (tx.drop) addPlayerToken(playersSpan, `-${tx.drop.last}`, "drop");
+      if (tx.add)  addPlayerToken(playersSpan, `+${shortName(tx.add)}`,  "add");
+      if (tx.drop) addPlayerToken(playersSpan, `-${shortName(tx.drop)}`, "drop");
       const playerTitle = [
         tx.add  ? `+${tx.add.first} ${tx.add.last}`   : null,
         tx.drop ? `-${tx.drop.first} ${tx.drop.last}` : null
@@ -348,23 +540,105 @@ async function renderQueue() {
       list.appendChild(row);
     }
   });
+
+  if (queueFirstRender) {
+    queueFirstRender = false;
+    const { queueScrollTop } = await browser.storage.local.get("queueScrollTop");
+    if (queueScrollTop) { list.scrollTop = queueScrollTop; applyQueueSearch(); return; }
+  }
+  list.scrollTop = scrollTop;
+  applyQueueSearch();
 }
+
+// ── Queue search ─────────────────────────────────────────────────────────────
+
+function applyQueueSearch() {
+  const input = document.getElementById("queueSearchInput");
+  const q = (input?.value || "").trim().toLowerCase();
+  document.querySelectorAll("#queue-list .tx-row").forEach(row => {
+    const players = (row.dataset.players || "").toLowerCase();
+    row.style.display = (!q || players.includes(q)) ? "" : "none";
+  });
+}
+
+(function setupQueueSearch() {
+  const btn   = document.getElementById("queueSearchBtn");
+  const input = document.getElementById("queueSearchInput");
+
+  btn.addEventListener("click", () => {
+    const visible = input.style.display === "block";
+    if (visible) {
+      input.style.display = "none";
+      input.value = "";
+      applyQueueSearch();
+    } else {
+      input.style.display = "block";
+      input.focus();
+    }
+  });
+
+  input.addEventListener("input", applyQueueSearch);
+
+  input.addEventListener("blur", () => {
+    input.style.display = "none";
+    input.value = "";
+    applyQueueSearch();
+  });
+})();
 
 // ── Cutoff inputs: save on blur or Enter ──────────────────────────────────────
 
+const CUTOFF_FORMAT_RE = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
+
+function isValidCutoffFormat(val) {
+  return CUTOFF_FORMAT_RE.test(val);
+}
+
 async function saveCutoff() {
-  const raw       = document.getElementById("cutoff").value.trim();
+  const el  = document.getElementById("cutoff");
+  const raw = el.value.trim();
+
+  if (!raw) {
+    await browser.storage.local.remove("cutoff");
+    renderQueue();
+    return;
+  }
+
   const converted = normalizeToISO(raw);
-  document.getElementById("cutoff").value = converted;
+  if (!isValidCutoffFormat(converted)) {
+    alert(`Invalid date format: "${raw}"\nMust be: YYYY-MM-DD HH:MM`);
+    const prev = (await browser.storage.local.get("cutoff")).cutoff || "";
+    el.value = prev;
+    return;
+  }
+
+  el.value = converted;
   await browser.storage.local.set({ cutoff: converted });
   renderQueue();
 }
 
 async function saveUpperCutoff() {
-  const val = document.getElementById("upperCutoff").value.trim();
-  if (!val) return;
-  await browser.storage.local.set({ upperCutoff: val });
-  browser.runtime.sendMessage({ type: "SET_UPPER_CUTOFF", value: val }).catch(() => {});
+  const el  = document.getElementById("upperCutoff");
+  const raw = el.value.trim();
+
+  if (!raw) {
+    await browser.storage.local.remove("upperCutoff");
+    browser.runtime.sendMessage({ type: "SET_UPPER_CUTOFF", value: null }).catch(() => {});
+    renderQueue();
+    return;
+  }
+
+  const converted = normalizeToISO(raw);
+  if (!isValidCutoffFormat(converted)) {
+    alert(`Invalid date format: "${raw}"\nMust be: YYYY-MM-DD HH:MM`);
+    const prev = (await browser.storage.local.get("upperCutoff")).upperCutoff || "";
+    el.value = prev;
+    return;
+  }
+
+  el.value = converted;
+  await browser.storage.local.set({ upperCutoff: converted });
+  browser.runtime.sendMessage({ type: "SET_UPPER_CUTOFF", value: converted }).catch(() => {});
   renderQueue();
 }
 
@@ -382,24 +656,68 @@ document.getElementById("nowBtn").onclick = async () => {
   renderQueue();
 };
 
+document.getElementById("allBtn").onclick = async () => {
+  const res = await browser.runtime.sendMessage({ type: "GET_QUEUE" });
+  const dates = (res?.queue || []).map(tx => tx.date).filter(Boolean).map(d => new Date(d));
+  if (!dates.length) { alert("No transactions in queue."); return; }
+  const oldest = dateToISO(new Date(Math.min(...dates)));
+  const newest = dateToISO(new Date(Math.max(...dates)));
+  document.getElementById("cutoff").value      = oldest;
+  document.getElementById("upperCutoff").value = newest;
+  await browser.storage.local.set({ cutoff: oldest, upperCutoff: newest });
+  browser.runtime.sendMessage({ type: "SET_UPPER_CUTOFF", value: newest }).catch(() => {});
+  renderQueue();
+};
+
+document.getElementById("resetQueueBtn").onclick = async () => {
+  await browser.runtime.sendMessage({ type: "RESET_QUEUE_INDEX" });
+  renderQueue();
+};
+
+document.getElementById("clearQueueBtn").onclick = async () => {
+  if (!confirm("Clear the transaction queue?\n\nRe-scrape ESPN pages to reload it.")) return;
+  await browser.runtime.sendMessage({ type: "CLEAR_QUEUE" });
+  renderQueue();
+};
+
+function setAutoMode(running) {
+  const stepBtn = document.getElementById("step");
+  const nextBtn = document.getElementById("next");
+  const stopBtn = document.getElementById("stopAuto");
+  stepBtn.disabled = running;
+  stopBtn.disabled = !running;
+  nextBtn.textContent = running ? "Auto Running…" : "Auto Run (F8)";
+}
+
+document.getElementById("step").onclick = async () => {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) return;
+  browser.runtime.sendMessage({ type: "START_STEP", tabId: tab.id });
+};
+
 document.getElementById("next").onclick = async () => {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) return;
+  setAutoMode(true);
+  browser.runtime.sendMessage({ type: "START_AUTO", tabId: tab.id });
+};
 
-  if (!tab?.url?.includes("fantrax")) {
-    alert("Please navigate to the Fantrax Claim/Drop page first.");
-    return;
-  }
-
-  browser.tabs.sendMessage(tab.id, { type: "RUN_NEXT" });
-
-  // re-render after a short delay so index has advanced
-  setTimeout(renderQueue, 300);
+document.getElementById("stopAuto").onclick = () => {
+  browser.runtime.sendMessage({ type: "STOP_AUTO" });
+  setAutoMode(false);
 };
 
 browser.runtime.onMessage.addListener((msg) => {
-  if (msg.type === "QUEUE_UPDATED") renderQueue();
-  if (msg.type === "CUTOFF_SAVED")  loadCutoff().then(() => loadUpperCutoff().then(renderQueue));
+  if (msg.type === "QUEUE_UPDATED")  renderQueue();
+  if (msg.type === "CUTOFF_SAVED")   renderQueue();
+  if (msg.type === "AUTO_ERROR")   { setAutoMode(false); alert(msg.message); }
+  if (msg.type === "AUTO_STOPPED")   setAutoMode(false);
 });
+
+// Sync button state with background on popup open
+browser.runtime.sendMessage({ type: "GET_AUTO_STATE" }).then(res => {
+  if (res?.autoRunning) setAutoMode(true);
+}).catch(() => {});
 
 // ── Theme ──
 async function loadTheme() {
@@ -409,7 +727,6 @@ async function loadTheme() {
 
 function applyTheme(theme) {
   document.body.classList.toggle("dark", theme === "dark");
-  document.getElementById("themeToggle").textContent = theme === "dark" ? "☀️" : "🌙";
 }
 
 document.getElementById("themeToggle").onclick = async () => {

@@ -1,2 +1,4 @@
-archive/*
-*.code-workspace
+archive/
+node_modules/
+web-ext-artifacts/
+fantasy-sync-extension.code-workspace

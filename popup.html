@@ -152,6 +152,7 @@
       white-space: nowrap;
     }
     .btn-save:hover { filter: brightness(0.95); }
+    button:disabled { opacity: 0.35; cursor: default !important; }
 
     .links { display: flex; flex-direction: column; gap: 3px; }
     .link-row { display: flex; gap: 3px; }
@@ -178,7 +179,6 @@
     }
 
     #next {
-      width: 100%;
       font-size: 12px;
       padding: 6px;
       background: #1a73e8;
@@ -186,9 +186,9 @@
       border: none;
       border-radius: 3px;
       cursor: pointer;
-      margin-top: 2px;
     }
     #next:hover { background: #1558b0; }
+    #step:hover { filter: brightness(0.93); }
 
     #queue-list {
       padding-top: 4px;
@@ -207,12 +207,10 @@
       line-height: 1.3;
     }
     .tx-row[title]:hover { background: var(--row-hover-bg); }
-    .tx-row.tx-done   { color: var(--done-color); text-decoration: line-through; }
-    .tx-row.tx-cutoff { color: var(--cutoff-color); }
-    .tx-row.tx-cutoff.tx-done { color: var(--done-cutoff); }
-    .tx-row.tx-above  { color: var(--cutoff-color); }
-    .tx-row.tx-above.tx-done  { color: var(--done-cutoff); }
-    .tx-row.tx-excluded { opacity: 0.38; text-decoration: line-through; }
+    .tx-row.tx-done     { text-decoration: line-through; }
+    .tx-row.tx-cutoff   { color: var(--cutoff-color); }
+    .tx-row.tx-above    { color: var(--cutoff-color); }
+    .tx-row.tx-excluded { color: var(--cutoff-color); }
     .tx-row.drag-selected { background: var(--row-hover-bg) !important; outline: 1px solid var(--link-color); }
     .tx-date    { flex: 0 0 80px; font-size: 10px; }
     .tx-type    { flex: 0 0 28px; font-weight: bold; text-align: center; font-size: 10px; }
@@ -220,24 +218,33 @@
     .tx-players { flex: 0 0 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .add  { color: #079a3e; }
     .drop { color: #ec1c25; }
+    /* suppress add/drop colors for greyed rows; done keeps green/red under strikethrough */
     .tx-row.tx-cutoff .add,
     .tx-row.tx-cutoff .drop,
     .tx-row.tx-above .add,
     .tx-row.tx-above .drop,
     .tx-row.tx-excluded .add,
-    .tx-row.tx-excluded .drop,
-    .tx-row.tx-done .add,
-    .tx-row.tx-done .drop { color: inherit; }
+    .tx-row.tx-excluded .drop { color: inherit; }
     .empty        { color: var(--empty-color); font-size: 11px; padding: 6px 2px; }
     .queue-header { font-size: 10px; color: var(--queue-hdr); margin-bottom: 4px; }
+    #queueSearchInput {
+      display: none;
+      font-size: 11px;
+      padding: 2px 4px;
+      width: 110px;
+      background: var(--input-bg);
+      color: var(--input-text);
+      border: 1px solid var(--input-border);
+      border-radius: 2px;
+    }
   </style>
 </head>
 <body>
 
-  <!-- League IDs -->
+  <!-- League Settings -->
   <div class="section">
     <div class="section-header">
-      <div class="section-label">League IDs</div>
+      <div class="section-label">League Settings</div>
       <div class="toolbar">
         <button class="toolbar-icon" id="githubBtn" title="GitHub Repository">
           <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -251,31 +258,57 @@
               0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
           </svg>
         </button>
-        <button class="toolbar-icon" id="themeToggle" title="Toggle dark/light mode">🌙</button>
+        <button class="toolbar-icon" id="themeToggle" title="Toggle dark/light mode">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1v12a6 6 0 0 1 0-12z"/>
+          </svg>
+        </button>
       </div>
     </div>
     <div class="row">
-      <label>ESPN League ID:</label>
-      <input id="espnLeagueId" type="text" placeholder="numeric ID from ESPN URL" style="width:185px;flex:none;">
+      <label style="flex:0 0 auto;margin-right:4px;">ESPN ID:</label>
+      <input id="espnLeagueId" type="text" placeholder="numeric ID" style="flex:1;min-width:0;">
+      <button id="espnHomeBtn" class="toolbar-icon" title="Open ESPN Fantasy Baseball" style="flex:0 0 auto;font-size:11px;padding:2px 4px;">↗</button>
+      <label style="flex:0 0 auto;margin:0 4px;">Roster Size:</label>
+      <input id="rosterSize" type="text" placeholder="22" style="flex:0 0 34px;min-width:0;">
+      <label style="flex:0 0 auto;margin:0 4px;">IL:</label>
+      <input id="ilSlots" type="text" placeholder="3" style="flex:0 0 34px;min-width:0;">
+      <button id="espnSettingsBtn" class="toolbar-icon" title="Open ESPN League Settings" style="flex:0 0 auto;font-size:11px;padding:2px 4px;" disabled>↗</button>
     </div>
-    <div class="row">
-      <label>Fantrax League ID:</label>
-      <input id="fantraxLeagueId" type="text" placeholder="alphanumeric ID from Fantrax URL" style="width:185px;flex:none;">
-      <button class="btn-save" id="saveLeagues">Save IDs</button>
+    <div class="row" style="margin-bottom:0;">
+      <label style="flex:0 0 auto;margin-right:4px;">Fantrax ID:</label>
+      <input id="fantraxLeagueId" type="text" placeholder="alphanumeric ID" style="flex:1;min-width:0;">
+      <button id="fantraxHomeBtn" class="toolbar-icon" title="Open Fantrax Fantasy Leagues" style="flex:0 0 auto;font-size:11px;padding:2px 4px;">↗</button>
+      <label style="flex:0 0 auto;margin:0 4px;">Roster Req:</label>
+      <input id="fantraxRosterSize" type="text" readonly style="flex:0 0 34px;min-width:0;color:var(--label);cursor:help;" tabindex="-1" title="Minimum active roster slots needed in Fantrax league settings to avoid roster-full errors on replay.">
+      <button id="fantraxSettingsBtn" class="toolbar-icon" title="Open Fantrax League Roster Settings" style="flex:0 0 auto;font-size:11px;padding:2px 4px;" disabled>↗</button>
     </div>
   </div>
 
-  <!-- Quick links -->
+  <!-- ESPN Quick links -->
   <div class="section">
-    <div class="section-label">Quick Links</div>
+    <div class="section-label">ESPN Quick Links</div>
     <div class="links">
       <div class="link-row">
-        <button class="link-btn" id="linkEspn">&#9654; ESPN Recent Activity</button>
-        <button class="link-btn" id="linkFantraxRecent">&#9654; Fantrax Recent Activity</button>
+        <button class="link-btn" id="linkEspn">&#9654; Recent Activity</button>
+        <button class="link-btn" id="linkEspnPage2">&#9654; Oldest Activity</button>
+        <button class="link-btn" id="linkEspnDraft">&#9654; Draft Recap</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fantrax Quick links -->
+  <div class="section">
+    <div class="section-label">Fantrax Quick Links</div>
+    <div class="links">
+      <div class="link-row">
+        <button class="link-btn" id="linkFantraxClaim">&#9654; Claim/Drop</button>
+        <button class="link-btn" id="linkFantraxTrade">&#9654; Trade</button>
+        <button class="link-btn" id="linkFantraxImport">&#9654; Draft Import</button>
       </div>
       <div class="link-row">
-        <button class="link-btn" id="linkFantraxClaim">&#9654; Fantrax Claim/Drop</button>
-        <button class="link-btn" id="linkFantraxTrade">&#9654; Fantrax Trade</button>
+        <button class="link-btn" id="linkFantraxRecent">&#9654; Transaction History</button>
+        <button class="link-btn" id="linkFantraxTrending">&#9654; Available Trending Players</button>
       </div>
     </div>
   </div>
@@ -284,16 +317,44 @@
   <div class="section">
     <div class="section-label">Sync Settings</div>
     <div class="row">
+      <button class="btn-save" id="allBtn" style="min-width:36px;padding-left:5px;padding-right:5px;">All</button>
       <span class="cutoff-label">From:</span>
-      <input id="cutoff" type="text" placeholder="YYYY-MM-DD HH:MM" style="width:120px;flex:none;">
+      <input id="cutoff" type="text" placeholder="YYYY-MM-DD HH:MM" style="flex:1;min-width:0;">
       <span class="cutoff-label">To:</span>
-      <input id="upperCutoff" type="text" placeholder="YYYY-MM-DD HH:MM" style="width:120px;flex:none;">
-      <button class="btn-save" id="nowBtn">Now</button>
+      <input id="upperCutoff" type="text" placeholder="YYYY-MM-DD HH:MM" style="flex:1;min-width:0;">
+      <button class="btn-save" id="nowBtn" style="min-width:36px;padding-left:5px;padding-right:5px;">Now</button>
     </div>
-    <button id="next">Next Transaction (F8)</button>
+    <div class="row" style="margin-bottom:0;">
+      <button id="step" style="flex:1;font-size:12px;padding:6px;background:var(--btn-bg);color:var(--btn-text);border:1px solid var(--btn-border);border-radius:3px;cursor:pointer;">Next (F7)</button>
+      <button id="next" style="flex:2;margin-top:0;">Auto Run (F8)</button>
+      <button id="stopAuto" style="flex:1;font-size:12px;padding:6px;background:var(--btn-bg);color:var(--btn-text);border:1px solid var(--btn-border);border-radius:3px;cursor:pointer;" disabled>Stop (F7)</button>
+    </div>
   </div>
 
   <!-- Transaction queue -->
+  <div class="section-header" style="margin-top:4px;margin-bottom:0;">
+    <div class="section-label" id="queue-header-label" style="margin-bottom:0;">Transaction Queue</div>
+    <div class="toolbar">
+      <input id="queueSearchInput" type="text" placeholder="Search players…">
+      <button class="toolbar-icon" id="queueSearchBtn" title="Search transactions">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+        </svg>
+      </button>
+      <button class="toolbar-icon" id="resetQueueBtn" title="Reset processed: mark all transactions as unprocessed">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+          <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+        </svg>
+      </button>
+      <button class="toolbar-icon" id="clearQueueBtn" title="Clear queue: re-scrape ESPN to reload">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+          <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
   <div id="queue-list">
     <div class="empty">No transactions loaded yet.</div>
   </div>
