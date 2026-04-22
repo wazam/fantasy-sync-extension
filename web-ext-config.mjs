@@ -15,6 +15,7 @@ export default {
     'package.json',
     'README.md',
     'ROADMAP.md',
+    'TODO.md',
     'web-ext-config.mjs',
   ],
 };

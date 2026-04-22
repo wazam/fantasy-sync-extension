@@ -108,6 +108,19 @@ function extractTransactions() {
       const typeSpan = row.querySelector(".typeInfo span:last-child");
       if (!typeSpan?.innerText.toLowerCase().includes("processed")) return;
 
+      // Extract embedded drops — a trading team may drop a player to clear roster space.
+      // These appear as .waiver-drop spans inside the trade row and must process
+      // on the claim/drop page before the trade itself.
+      row.querySelectorAll(".transaction-details.waiver-drop").forEach(detail => {
+        const text = detail.innerText;
+        const team = detail.querySelector(".teamName")?.innerText.trim() || null;
+        const m    = text.match(/dropped (.*?),\s*([A-Z]{2,3})\b/);
+        if (!m) return;
+        const drop = parseName(m[1]);
+        drop.mlbTeam = m[2];
+        results.push({ type: "DROP", team, add: null, drop, date: parseDate(row), idx });
+      });
+
       const legs = [];
       detailsArr.forEach(detail => {
         const playerEl = detail.querySelector(".truncate a");
