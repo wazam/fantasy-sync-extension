@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Fantasy Sync Assistant",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Syncs ESPN fantasy baseball transactions to a Fantrax mirrored league by replaying each move on the Fantrax Commissioner pages, keeping rosters current for accurate free agent scouting.",
   "author": "James Wazam",
   "icons": {

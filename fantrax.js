@@ -116,7 +116,7 @@ async function fillAddWithFallback(player) {
       if (player.mlbTeam) {
         const mlbRe = new RegExp(`\\b${player.mlbTeam}\\b`);
         const rows  = [...document.querySelectorAll("#tblPool tbody tr")];
-        const match = rows.find(r => mlbRe.test(r.textContent));
+        const match = rows.find(r => mlbRe.test(r.querySelector(".player")?.textContent || ""));
         if (match) {
           match.click();
           await delay(600);
@@ -434,7 +434,7 @@ async function findAndClickPlayer(player) {
     if (mlbRe) {
       for (const row of rows) {
         const nameTxt = row.querySelector("td.player a")?.textContent.trim() || "";
-        if (nameTxt === reversedName && mlbRe.test(row.textContent)) {
+        if (nameTxt === reversedName && mlbRe.test(row.querySelector(".player")?.textContent || "")) {
           const draftLink = row.querySelector("td.draft a");
           if (draftLink) { draftLink.click(); await delay(600); return true; }
         }
@@ -453,7 +453,7 @@ async function findAndClickPlayer(player) {
     // Pass 3: team only — last resort, only for last-name-only searches (not "Last, First")
     if (!term.includes(",") && mlbRe) {
       for (const row of rows) {
-        if (mlbRe.test(row.textContent)) {
+        if (mlbRe.test(row.querySelector(".player")?.textContent || "")) {
           const draftLink = row.querySelector("td.draft a");
           if (draftLink) { draftLink.click(); await delay(600); return true; }
         }
