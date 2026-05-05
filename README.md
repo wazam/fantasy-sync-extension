@@ -1,6 +1,12 @@
 # Fantasy Sync Assistant Extension
 
-![alt text](assets/icon-48.png) Fantasy Sync Assistant is a Firefox extension for competitive fantasy baseball players who mirror their ESPN league on Fantrax. Fantrax's available trending players page becomes accurate only when your Fantrax rosters match ESPN exactly. This extension scrapes ESPN transactions and draft picks into a queue and replays each move on the Fantrax Commissioner pages, keeping your mirror up to date without manual re-entry.
+[![Firefox Add-ons](https://img.shields.io/amo/v/fantasy-sync-assistant?label=Firefox%20Add-ons)](https://addons.mozilla.org/en-US/firefox/addon/fantasy-sync-assistant/)
+[![AMO Users](https://img.shields.io/amo/users/fantasy-sync-assistant)](https://addons.mozilla.org/en-US/firefox/addon/fantasy-sync-assistant/)
+[![AMO Rating](https://img.shields.io/amo/rating/fantasy-sync-assistant)](https://addons.mozilla.org/en-US/firefox/addon/fantasy-sync-assistant/)
+[![AMO Downloads](https://img.shields.io/amo/dw/fantasy-sync-assistant)](https://addons.mozilla.org/en-US/firefox/addon/fantasy-sync-assistant/)
+[![Latest Release](https://img.shields.io/github/v/release/wazam/fantasy-sync-extension?sort=semver)](https://github.com/wazam/fantasy-sync-extension/releases)
+
+![Fantasy Sync Assistant icon](assets/icon-48.png) **Fantasy Sync Assistant** is a Firefox extension for competitive fantasy baseball players who mirror their ESPN league on Fantrax. Fantrax's available trending players page becomes accurate only when your Fantrax rosters match ESPN exactly. This extension scrapes ESPN transactions and draft picks into a queue and replays each move on the Fantrax Commissioner pages, keeping your mirror up to date without manual re-entry.
 
 ## Installation
 
@@ -28,15 +34,15 @@ Download the extension from the [Firefox Add-ons](https://addons.mozilla.org/en-
 
 ## Screenshots
 
-![alt text](<docs/screenshot startup.png>)
+![Extension popup on startup](docs/screenshot startup.png)
 
 Extension popup on first open showing the queue, cutoff controls, and quick links before any transactions are loaded.
 
-![alt text](<docs/screenshot espn.png>)
+![ESPN Recent Activity page with transactions scraped](docs/screenshot espn.png)
 
 ESPN Recent Activity page with transactions scraped into the queue. Cutoff range set to filter out older moves.
 
-![alt text](<docs/screenshot fantrax.png>)
+![Fantrax Commissioner page after processing transactions](docs/screenshot fantrax.png)
 
 Fantrax Commissioner page after the extension has automatically processed a batch of add/drop transactions.
 
