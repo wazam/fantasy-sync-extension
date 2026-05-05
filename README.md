@@ -34,15 +34,15 @@ Download the extension from the [Firefox Add-ons](https://addons.mozilla.org/en-
 
 ## Screenshots
 
-![Extension popup on startup](docs/screenshot startup.png)
+![Extension popup on startup](<docs/screenshot startup.png>)
 
 Extension popup on first open showing the queue, cutoff controls, and quick links before any transactions are loaded.
 
-![ESPN Recent Activity page with transactions scraped](docs/screenshot espn.png)
+![ESPN Recent Activity page with transactions scraped](<docs/screenshot espn.png>)
 
 ESPN Recent Activity page with transactions scraped into the queue. Cutoff range set to filter out older moves.
 
-![Fantrax Commissioner page after processing transactions](docs/screenshot fantrax.png)
+![Fantrax Commissioner page after processing transactions](<docs/screenshot fantrax.png>)
 
 Fantrax Commissioner page after the extension has automatically processed a batch of add/drop transactions.
 
