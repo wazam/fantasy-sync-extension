@@ -6,6 +6,22 @@ const excludedKeys = new Set();
 let upperCutoff = null; // "YYYY-MM-DD HH:MM" or null
 let batchSeq = 0; // fallback counter for sources that don't supply a page number (e.g. draft.js)
 
+// Transactions already imported to Fantrax, keyed by txKey() and persisted across
+// reloads, so a rescrape (even a partial one that doesn't go all the way back)
+// never re-queues something already processed.
+let processedKeys = new Set();
+browser.storage.local.get("processedKeys").then(res => {
+  if (Array.isArray(res.processedKeys)) processedKeys = new Set(res.processedKeys);
+});
+
+function markProcessed(tx) {
+  if (!tx) return;
+  const key = txKey(tx);
+  if (processedKeys.has(key)) return;
+  processedKeys.add(key);
+  browser.storage.local.set({ processedKeys: [...processedKeys] });
+}
+
 // ── Auto-navigation state ─────────────────────────────────────────────────────
 let autoTabId    = null;
 let autoRunning  = false;
@@ -236,6 +252,7 @@ browser.runtime.onMessage.addListener((msg) => {
       const key = txKey(tx);
       if (seenKeys.has(key)) return false;
       seenKeys.add(key);
+      if (processedKeys.has(key)) return false; // already imported in a prior session
       tx.batchSeq = seq; // stamp before dedup check passes it through
       return true;
     });
@@ -336,7 +353,9 @@ browser.runtime.onMessage.addListener((msg) => {
     return (async () => {
       if (msg.drftBatch) {
         // import.js processed all picks at once — advance past every DRFT entry
-        while (index < queue.length && queue[index].type === "DRFT") index++;
+        while (index < queue.length && queue[index].type === "DRFT") markProcessed(queue[index++]);
+      } else {
+        markProcessed(msg.tx);
       }
       updateBadge();
       browser.runtime.sendMessage({ type: "QUEUE_UPDATED" }).catch(() => {});

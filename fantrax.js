@@ -6,6 +6,9 @@ function delay(ms) {
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
+// ESPN position abbreviations that all map to Fantrax's single "P" slot.
+const PITCHER_POSITIONS = new Set(["P", "SP", "RP"]);
+
 function normalizeTeamName(raw) {
   return raw.trim().replace(/\s*\*+\s*$/, "");
 }
@@ -114,9 +117,21 @@ async function fillAddWithFallback(player) {
     if (count  > 1) {
       // Disambiguate by MLB team when available
       if (player.mlbTeam) {
-        const mlbRe = new RegExp(`\\b${player.mlbTeam}\\b`);
-        const rows  = [...document.querySelectorAll("#tblPool tbody tr")];
-        const match = rows.find(r => mlbRe.test(r.querySelector(".player")?.textContent || ""));
+        const mlbRe   = new RegExp(`\\b${player.mlbTeam}\\b`);
+        const rows     = [...document.querySelectorAll("#tblPool tbody tr")];
+        const teamRows = rows.filter(r => mlbRe.test(r.querySelector(".player")?.textContent || ""));
+
+        // Same name + same MLB team can still be two different players
+        // (e.g. a pitcher and a hitter): narrow further by position.
+        let match = teamRows.length === 1 ? teamRows[0] : null;
+        if (!match && teamRows.length > 1 && player.position) {
+          const posRe = PITCHER_POSITIONS.has(player.position.toUpperCase())
+            ? /\bP\b/
+            : new RegExp(`\\b${player.position}\\b`, "i");
+          match = teamRows.find(r => posRe.test(r.querySelector(".player")?.textContent || ""));
+        }
+        if (!match && teamRows.length >= 1) match = teamRows[0];
+
         if (match) {
           match.click();
           await delay(600);
@@ -311,7 +326,7 @@ async function processTrade(tx) {
       const btn = alertBox.querySelector(".filterButton.curve2");
       if (btn && btn.textContent.trim() === "OK") {
         btn.click();
-        browser.runtime.sendMessage({ type: "TRANSACTION_DONE" }).catch(() => {});
+        browser.runtime.sendMessage({ type: "TRANSACTION_DONE", tx }).catch(() => {});
         return; // page will reload and destroy this script — nothing more to do
       }
     }
@@ -381,7 +396,7 @@ async function processNext() {
       await delay(400);
       // All claim/drop transactions show 2 popups: Choose... + Success!
       await clickSubmitAndAwaitPopups(false, 2);
-      browser.runtime.sendMessage({ type: "TRANSACTION_DONE" }).catch(() => {});
+      browser.runtime.sendMessage({ type: "TRANSACTION_DONE", tx }).catch(() => {});
       return;
     }
   }
@@ -394,7 +409,7 @@ async function processNext() {
   // All claim/drop transactions show 2 popups: Choose... + Success!
   // forceDropAction=true overrides "Move to IR" default in the Choose... popup.
   await clickSubmitAndAwaitPopups(!!tx.drop, 2);
-  browser.runtime.sendMessage({ type: "TRANSACTION_DONE" }).catch(() => {});
+  browser.runtime.sendMessage({ type: "TRANSACTION_DONE", tx }).catch(() => {});
 }
 
 // ── Draft import helpers (playerImport.go) ────────────────────────────────────

@@ -114,10 +114,12 @@ function extractTransactions() {
       row.querySelectorAll(".transaction-details.waiver-drop").forEach(detail => {
         const text = detail.innerText;
         const team = detail.querySelector(".teamName")?.innerText.trim() || null;
-        const m    = text.match(/dropped (.*?),\s*([A-Z]{2,3})\b/);
+        const m    = text.match(/dropped (.*?),\s*([A-Z]{2,3})\s+(\S+)\s+(?:to|from)\b/) ||
+                     text.match(/dropped (.*?),\s*([A-Z]{2,3})\b/);
         if (!m) return;
         const drop = parseName(m[1]);
         drop.mlbTeam = m[2];
+        if (m[3]) drop.position = m[3];
         results.push({ type: "DROP", team, add: null, drop, date: parseDate(row), idx });
       });
 
@@ -159,12 +161,14 @@ function extractTransactions() {
       if (rowTeam) team = rowTeam;
 
       if (text.includes("dropped")) {
-        const m = text.match(/dropped (.*?),\s*([A-Z]{2,3})\b/);
-        if (m) { drop = parseName(m[1]); drop.mlbTeam = m[2]; }
+        const m = text.match(/dropped (.*?),\s*([A-Z]{2,3})\s+(\S+)\s+(?:to|from)\b/) ||
+                  text.match(/dropped (.*?),\s*([A-Z]{2,3})\b/);
+        if (m) { drop = parseName(m[1]); drop.mlbTeam = m[2]; if (m[3]) drop.position = m[3]; }
       }
       if (text.includes("added")) {
-        const m = text.match(/added (.*?),\s*([A-Z]{2,3})\b/);
-        if (m) { add = parseName(m[1]); add.mlbTeam = m[2]; }
+        const m = text.match(/added (.*?),\s*([A-Z]{2,3})\s+(\S+)\s+(?:from|to)\b/) ||
+                  text.match(/added (.*?),\s*([A-Z]{2,3})\b/);
+        if (m) { add = parseName(m[1]); add.mlbTeam = m[2]; if (m[3]) add.position = m[3]; }
       }
     });
 
