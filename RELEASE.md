@@ -56,11 +56,15 @@ Runs `web-ext build`, which zips the extension into `web-ext-artifacts/fantasy_s
 
 - Go to the submission page: <https://addons.mozilla.org/en-US/developers/addon/fantasy-sync-assistant/versions/submit/>
 - Upload the `.zip` from `web-ext-artifacts/`
-- Fill in release notes (what's new in this version)
+- Fill in release notes: the same text as the GitHub Release notes in step 7 (see that step for the format and the character limit)
 - Submit for review
 
 AMO's automated review usually signs it within minutes; a manual review (if
 flagged) can take longer. Check email for the approval notice.
+
+If this release changed README's Usage, Features, or Screenshots sections,
+also update the AMO listing's description and images on the product page
+(separate from the version's release notes above) to match.
 
 ## 6. Download the signed .xpi from Mozilla
 
@@ -70,10 +74,22 @@ flagged) can take longer. Check email for the approval notice.
   officially signed file, distinct from the raw build output, and is what
   goes on GitHub in the next step.
 
-## 7. Create the GitHub Release with the signed .xpi attached
+## 7. Create the GitHub Release with both the signed .xpi and the raw .zip attached
+
+Every release since v1.0.0 has attached both files, not just the signed
+`.xpi`: the raw `.zip` from step 4 gives anyone the exact source that was
+submitted to Mozilla, alongside the officially signed file people actually
+install.
+
+Release notes are written fresh for the user, not copied from the commit
+message in step 2: group by user-visible impact, order by significance, and
+use plain language instead of commit-speak (a `fix:` bullet about a gating
+flag becomes a plain sentence about a redirect no longer happening). The
+exact same text, subject to AMO's character limit, is used for both the AMO
+submission notes in step 5 and the GitHub Release notes below.
 
 ```bash
-gh release create vX.Y.Z path/to/downloaded-signed.xpi \
+gh release create vX.Y.Z path/to/downloaded-signed.xpi path/to/fantasy_sync_assistant-X.Y.Z.zip \
   --title "vX.Y.Z" \
   --notes "$(cat <<'EOF'
 **What's New**
@@ -87,11 +103,11 @@ EOF
 )"
 ```
 
-Or without the CLI: create the release at <https://github.com/wazam/fantasy-sync-extension/releases/new>, select the new tag, paste in notes, and drag the signed `.xpi` into the assets area.
+Or without the CLI: create the release at <https://github.com/wazam/fantasy-sync-extension/releases/new>, select the new tag, paste in notes, and drag both the signed `.xpi` and the `.zip` into the assets area.
 
 ## 8. Verify
 
 - AMO listing shows the new version live: <https://addons.mozilla.org/en-US/firefox/addon/fantasy-sync-assistant/>
 - GitHub Release page shows the `.xpi` attached and downloadable: <https://github.com/wazam/fantasy-sync-extension/releases>
 - No manual README changes needed for the badges: the version/users/rating/downloads badges and the "Latest Release" badge are all shields.io endpoints pulling live from AMO/GitHub, so they update on their own once both of the above are live.
-- If this release changed the UI, double-check README's feature list and any screenshots are still accurate; unlike the badges, those are static and won't update themselves.
+- If this release changed the UI, double-check README's feature list and any screenshots are still accurate, and that the AMO listing's description and screenshots match; unlike the badges, none of that updates itself.
