@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Fantasy Sync Assistant",
-  "version": "1.1.3",
+  "version": "1.2.0",
   "description": "Syncs ESPN fantasy baseball transactions to a Fantrax mirrored league by replaying each move on the Fantrax Commissioner pages, keeping rosters current for accurate free agent scouting.",
   "author": "James Wazam",
   "icons": {
@@ -45,7 +45,9 @@
     {
       "matches": [
         "*://fantasy.espn.com/*recentactivity*",
-        "*://fantasy.espn.com/*draftrecap*"
+        "*://fantasy.espn.com/*draftrecap*",
+        "*://fantasy.espn.com/*watchlist*",
+        "*://fantasy.espn.com/*league/settings*"
       ],
       "js": ["espn.js"],
       "run_at": "document_idle"
@@ -54,24 +56,11 @@
       "matches": [
         "*://www.fantrax.com/*claimDrop*",
         "*://www.fantrax.com/*trade.go*",
-        "*://www.fantrax.com/*playerImport.go*"
+        "*://www.fantrax.com/*playerImport.go*",
+        "*://www.fantrax.com/*createLeague.go*"
       ],
       "js": ["fantrax.js"],
       "run_at": "document_idle"
     }
-  ],
-  "commands": {
-    "step-transaction": {
-      "suggested_key": {
-        "default": "F7"
-      },
-      "description": "Next: process one transaction. or Stop: pause auto-run if active"
-    },
-    "next-transaction": {
-      "suggested_key": {
-        "default": "F8"
-      },
-      "description": "Auto: process all transactions automatically"
-    }
-  }
+  ]
 }

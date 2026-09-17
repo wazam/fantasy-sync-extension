@@ -10,7 +10,7 @@
       --bg:               #ffffff;
       --text:             #333333;
       --label:            #555555;
-      --section-label:    #888888;
+      --section-label:    #707070;
       --section-border:   #dddddd;
       --input-bg:         #ffffff;
       --input-border:     #cccccc;
@@ -27,19 +27,18 @@
       --link-dis-border:  #e0e0e0;
       --row-border:       #f0f0f0;
       --row-hover-bg:     #f0f4ff;
-      --done-color:       #bbbbbb;
       --cutoff-color:     #bbbbbb;
-      --done-cutoff:      #dddddd;
-      --empty-color:      #999999;
-      --queue-hdr:        #888888;
       --toolbar-icon:     #666666;
+      --active-bg:        #d5342b;
+      --active-border:    #b8281f;
+      --active-color:     #ffffff;
     }
 
     body.dark {
       --bg:               #1e1e1e;
       --text:             #e0e0e0;
       --label:            #aaaaaa;
-      --section-label:    #666666;
+      --section-label:    #a0a0a0;
       --section-border:   #3a3a3a;
       --input-bg:         #2d2d2d;
       --input-border:     #555555;
@@ -56,12 +55,11 @@
       --link-dis-border:  #444444;
       --row-border:       #2d2d2d;
       --row-hover-bg:     #1e2d45;
-      --done-color:       #555555;
       --cutoff-color:     #555555;
-      --done-cutoff:      #444444;
-      --empty-color:      #666666;
-      --queue-hdr:        #666666;
       --toolbar-icon:     #aaaaaa;
+      --active-bg:        #a5342c;
+      --active-border:    #c2453c;
+      --active-color:     #ffffff;
     }
 
     body {
@@ -101,6 +99,29 @@
       border-radius: 3px;
     }
     .toolbar-icon:hover { color: var(--text); background: var(--btn-bg); }
+    @keyframes settingsNeedsAttention {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(224, 82, 82, 0.65); }
+      50%      { box-shadow: 0 0 7px 3px rgba(224, 82, 82, 0.65); }
+    }
+    .toolbar-icon.needs-attention {
+      color: #e05252;
+      animation: settingsNeedsAttention 1.6s ease-in-out infinite;
+    }
+    .toolbar-icon.needs-attention:hover { color: #e05252; }
+    @keyframes brokenTxAlert {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(224, 155, 30, 0.65); }
+      50%      { box-shadow: 0 0 7px 3px rgba(224, 155, 30, 0.65); }
+    }
+    .toolbar-icon.broken-alert {
+      color: #e09b1e;
+      animation: brokenTxAlert 1.6s ease-in-out infinite;
+    }
+    .toolbar-icon.broken-alert:hover { color: #e09b1e; }
+    #filterBrokenBtn.active {
+      color: #e09b1e;
+      background: rgba(224, 155, 30, 0.18);
+    }
+    #filterBrokenBtn.active:hover { background: rgba(224, 155, 30, 0.3); }
 
     .section {
       margin-bottom: 7px;
@@ -126,6 +147,35 @@
       white-space: nowrap;
       flex: 0 0 105px;
     }
+    /* League Settings modal: every label shares one fixed width so every
+       textbox after it lines up, and a dotted "leader" fills whatever gap is
+       left after the text (mostly empty for a short label like "League ID:",
+       barely visible for the longest one), so the eye has something to
+       follow from label to value instead of a blank gap. */
+    .settings-label {
+      flex: 0 0 150px;
+      display: flex;
+      align-items: baseline;
+      gap: 3px;
+    }
+    .settings-label .leader {
+      flex: 1;
+      min-width: 4px;
+      border-bottom: 1px dotted var(--section-border);
+      margin-bottom: 2px;
+    }
+    .sync-subhead {
+      font-size: 9px;
+      color: var(--section-label);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+    }
+    .sync-divider {
+      border: none;
+      border-top: 1px solid var(--row-border);
+      margin: 6px 0;
+    }
     .cutoff-label {
       font-size: 11px;
       color: var(--label);
@@ -141,6 +191,8 @@
       border: 1px solid var(--input-border);
       border-radius: 2px;
     }
+    input[type="text"].field-missing,
+    input[type="text"].check-warning { border-color: #e05252; }
     .btn-save {
       font-size: 11px;
       padding: 3px 8px;
@@ -152,6 +204,7 @@
       white-space: nowrap;
     }
     .btn-save:hover { filter: brightness(0.95); }
+    #clearFiltersBtn { color: var(--label); }
     button:disabled { opacity: 0.35; cursor: default !important; }
 
     .links { display: flex; flex-direction: column; gap: 3px; }
@@ -159,6 +212,7 @@
     .link-btn {
       flex: 1;
       font-size: 11px;
+      line-height: 14px;
       padding: 5px 4px;
       cursor: pointer;
       text-align: center;
@@ -171,6 +225,12 @@
       text-overflow: ellipsis;
     }
     .link-btn:hover { background: var(--link-hover-bg); border-color: var(--link-color); }
+    .link-btn.active {
+      background: var(--active-bg);
+      border-color: var(--active-border);
+      color: var(--active-color);
+    }
+    .link-btn.active:hover { background: var(--active-bg); }
     .link-btn.disabled {
       color: var(--link-dis-color);
       cursor: default;
@@ -178,19 +238,43 @@
       border-color: var(--link-dis-border);
     }
 
-    #next {
+    .queue-btn {
       font-size: 12px;
       padding: 6px;
-      background: #1a73e8;
-      color: white;
-      border: none;
-      border-radius: 3px;
       cursor: pointer;
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      border: 1px solid var(--btn-border);
+      border-radius: 3px;
     }
-    #next:hover { background: #1558b0; }
-    #step:hover { filter: brightness(0.93); }
+    .queue-btn:hover { filter: brightness(0.93); }
+    .queue-btn.primary { background: #1a73e8; color: #fff; border: none; }
+    .queue-btn.primary:hover { background: #1558b0; filter: none; }
+    /* Full "border: 1px solid X" (not just border-color) on every state below,
+       matching .queue-btn's own base border shorthand: .primary uses
+       "border: none", and a longhand border-color alone wouldn't fully
+       override that shorthand if a state class ever ends up alongside it,
+       which previously caused a height mismatch on the Auto Run button. */
+    .queue-btn.blocked {
+      background: rgba(224, 155, 30, 0.85);
+      border: 1px solid #e09b1e;
+      color: #fff;
+    }
+    .queue-btn.blocked:hover { filter: brightness(1.05); }
+    .queue-btn.pending-skip {
+      background: rgba(224, 82, 82, 0.85);
+      border: 1px solid #e05252;
+      color: #fff;
+    }
+    .queue-btn.pending-skip:hover { filter: brightness(1.05); }
+    .queue-btn.active {
+      background: var(--active-bg);
+      border: 1px solid var(--active-border);
+      color: var(--active-color);
+    }
+    .queue-btn.active:hover { filter: brightness(1.1); }
 
-    #queue-list {
+    #queue-list, #processedHistoryList {
       padding-top: 4px;
       flex: 1;
       min-height: 0;
@@ -212,10 +296,29 @@
     .tx-row.tx-above    { color: var(--cutoff-color); }
     .tx-row.tx-excluded { color: var(--cutoff-color); }
     .tx-row.drag-selected { background: var(--row-hover-bg) !important; outline: 1px solid var(--link-color); }
+    .tx-row.tx-broken {
+      background: rgba(224, 155, 30, 0.16);
+      border-left: 3px solid #e09b1e;
+      cursor: pointer;
+    }
+    .tx-row.tx-broken:hover { background: rgba(224, 155, 30, 0.28); }
     .tx-date    { flex: 0 0 80px; font-size: 10px; }
     .tx-type    { flex: 0 0 28px; font-weight: bold; text-align: center; font-size: 10px; }
-    .tx-team    { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .tx-players { flex: 0 0 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* Fixed width (not flex:1) so the team column lines up at the same width on
+       every row; the players column is the one that flexes to absorb whatever
+       space is left, including the width taken by the ESPN link on broken rows. */
+    .tx-team    { flex: 0 0 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tx-players { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tx-espn-link {
+      flex: 0 0 auto;
+      font-size: 12px;
+      font-weight: bold;
+      color: #e09b1e;
+      text-decoration: none;
+      white-space: nowrap;
+      padding-left: 2px;
+    }
+    .tx-espn-link:hover { text-decoration: underline; }
     .add  { color: #079a3e; }
     .drop { color: #ec1c25; }
     /* suppress add/drop colors for greyed rows; done keeps green/red under strikethrough */
@@ -225,8 +328,7 @@
     .tx-row.tx-above .drop,
     .tx-row.tx-excluded .add,
     .tx-row.tx-excluded .drop { color: inherit; }
-    .empty        { color: var(--empty-color); font-size: 11px; padding: 6px 2px; }
-    .queue-header { font-size: 10px; color: var(--queue-hdr); margin-bottom: 4px; }
+    .empty { color: var(--label); font-size: 11px; padding: 6px 2px; }
     #queueSearchInput {
       display: none;
       font-size: 11px;
@@ -237,15 +339,115 @@
       border: 1px solid var(--input-border);
       border-radius: 2px;
     }
+
+    /* ── Modals (League Settings, Stats, Player Notes) ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 0;
+      box-sizing: border-box;
+      overflow: hidden;
+      z-index: 10;
+    }
+    .modal-overlay[hidden] { display: none; }
+    .modal-box {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--section-border);
+      border-radius: 4px;
+      padding: 8px;
+      width: 340px;
+      max-height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .note-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 2px;
+      border-bottom: 1px solid var(--row-border);
+      font-size: 11px;
+    }
+    .note-item .note-name { font-weight: bold; flex: 0 0 auto; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .note-item .note-text { color: var(--label); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #notesListItems { overflow-y: auto; flex: 1; min-height: 0; margin-top: 4px; }
+    .suggest-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      max-height: 130px;
+      overflow-y: auto;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-top: none;
+      border-radius: 0 0 2px 2px;
+    }
+    .suggest-dropdown[hidden] { display: none; }
+    .suggest-item {
+      padding: 4px 6px;
+      font-size: 11px;
+      color: var(--input-text);
+      cursor: pointer;
+    }
+    .suggest-item:hover { background: var(--row-hover-bg); }
+    .modal-box.wide { width: 356px; }
+    select {
+      font-size: 11px;
+      padding: 3px 4px;
+      background: var(--input-bg);
+      color: var(--input-text);
+      border: 1px solid var(--input-border);
+      border-radius: 2px;
+    }
+    #shameStatsItems { overflow-y: auto; flex: 1; min-height: 0; margin-top: 4px; }
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 4px 2px;
+      border-bottom: 1px solid var(--row-border);
+      font-size: 11px;
+    }
+    .stat-item .stat-count { color: var(--label); flex: 0 0 auto; }
   </style>
 </head>
 <body>
 
-  <!-- League Settings -->
+  <!-- App toolbar -->
   <div class="section">
-    <div class="section-header">
-      <div class="section-label">League Settings</div>
+    <div class="section-header" style="margin-bottom:0;">
+      <div class="section-label" style="margin-bottom:0;">Fantasy Sync Assistant</div>
       <div class="toolbar">
+        <button class="toolbar-icon" id="leagueSettingsBtn" title="League Settings">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.858 2.929 2.929 0 0 1 0 5.858z"/>
+          </svg>
+        </button>
+        <button class="toolbar-icon" id="statsBtn" title="Manager Stats">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M1 11a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3zm5-4a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm5-5a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1V2z"/>
+          </svg>
+        </button>
+        <button class="toolbar-icon" id="notesBtn" title="Player Notes">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+            <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/>
+          </svg>
+        </button>
         <button class="toolbar-icon" id="githubBtn" title="GitHub Repository">
           <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
@@ -258,30 +460,12 @@
               0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
           </svg>
         </button>
-        <button class="toolbar-icon" id="themeToggle" title="Toggle dark/light mode">
+        <button class="toolbar-icon" id="themeToggle" title="Switch to dark mode">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1v12a6 6 0 0 1 0-12z"/>
           </svg>
         </button>
       </div>
-    </div>
-    <div class="row">
-      <label style="flex:0 0 auto;margin-right:4px;">ESPN ID:</label>
-      <input id="espnLeagueId" type="text" placeholder="numeric ID" style="flex:1;min-width:0;">
-      <button id="espnHomeBtn" class="toolbar-icon" title="Open ESPN Fantasy Baseball" style="flex:0 0 auto;font-size:11px;padding:2px 4px;">↗</button>
-      <label style="flex:0 0 auto;margin:0 4px;">Roster Size:</label>
-      <input id="rosterSize" type="text" placeholder="22" style="flex:0 0 34px;min-width:0;">
-      <label style="flex:0 0 auto;margin:0 4px;">IL:</label>
-      <input id="ilSlots" type="text" placeholder="3" style="flex:0 0 34px;min-width:0;">
-      <button id="espnSettingsBtn" class="toolbar-icon" title="Open ESPN League Settings" style="flex:0 0 auto;font-size:11px;padding:2px 4px;" disabled>↗</button>
-    </div>
-    <div class="row" style="margin-bottom:0;">
-      <label style="flex:0 0 auto;margin-right:4px;">Fantrax ID:</label>
-      <input id="fantraxLeagueId" type="text" placeholder="alphanumeric ID" style="flex:1;min-width:0;">
-      <button id="fantraxHomeBtn" class="toolbar-icon" title="Open Fantrax Fantasy Leagues" style="flex:0 0 auto;font-size:11px;padding:2px 4px;">↗</button>
-      <label style="flex:0 0 auto;margin:0 4px;">Roster Req:</label>
-      <input id="fantraxRosterSize" type="text" readonly style="flex:0 0 34px;min-width:0;color:var(--label);cursor:help;" tabindex="-1" title="Minimum active roster slots needed in Fantrax league settings to avoid roster-full errors on replay.">
-      <button id="fantraxSettingsBtn" class="toolbar-icon" title="Open Fantrax League Roster Settings" style="flex:0 0 auto;font-size:11px;padding:2px 4px;" disabled>↗</button>
     </div>
   </div>
 
@@ -290,9 +474,15 @@
     <div class="section-label">ESPN Quick Links</div>
     <div class="links">
       <div class="link-row">
-        <button class="link-btn" id="linkEspn">&#9654; Recent Activity</button>
-        <button class="link-btn" id="linkEspnPage2">&#9654; Oldest Activity</button>
-        <button class="link-btn" id="linkEspnDraft">&#9654; Draft Recap</button>
+        <button class="link-btn" id="linkEspn" title="Open the ESPN Recent Activity page for this league">&#8599; Recent Activity</button>
+      </div>
+      <div class="link-row">
+        <button class="link-btn" id="loadAllHistoryBtn" title="Walk every ESPN activity page from newest to oldest and load it all into the queue">&#9654; Load All Activity</button>
+        <button class="link-btn" id="loadRosterUpdatesBtn" title="Walk every ESPN roster-update page and track when managers make lineup moves (not added to the tx queue)">&#9654; Load Roster Updates</button>
+      </div>
+      <div class="link-row">
+        <button class="link-btn" id="linkEspnWatchlist" title="Open the ESPN Watch List page and add every player to Player Notes">&#9654; Load Watch List</button>
+        <button class="link-btn" id="linkEspnDraft" title="Open the ESPN Draft Recap page and load every pick into the queue">&#9654; Load Draft Recap</button>
       </div>
     </div>
   </div>
@@ -302,52 +492,57 @@
     <div class="section-label">Fantrax Quick Links</div>
     <div class="links">
       <div class="link-row">
-        <button class="link-btn" id="linkFantraxClaim">&#9654; Claim/Drop</button>
-        <button class="link-btn" id="linkFantraxTrade">&#9654; Trade</button>
-        <button class="link-btn" id="linkFantraxImport">&#9654; Draft Import</button>
+        <button class="link-btn" id="linkFantraxTrending" title="Open the Fantrax Available Trending Players page to scout free agents">&#8599; Available Trending Players</button>
+        <button class="link-btn" id="linkFantraxRecent" title="Open the Fantrax Transaction History page to cross-check against the queue">&#8599; Transaction History</button>
       </div>
       <div class="link-row">
-        <button class="link-btn" id="linkFantraxRecent">&#9654; Transaction History</button>
-        <button class="link-btn" id="linkFantraxTrending">&#9654; Available Trending Players</button>
+        <button class="link-btn" id="linkFantraxClaim" title="Open the Fantrax Claim/Drop page to process queued add/drop transactions">&#8599; Claim/Drop</button>
+        <button class="link-btn" id="linkFantraxTrade" title="Open the Fantrax Trade page to process queued trades">&#8599; Trade</button>
+        <button class="link-btn" id="linkFantraxImport" title="Open the Fantrax Draft Import page to process queued draft picks">&#8599; Draft Import</button>
       </div>
     </div>
   </div>
 
-  <!-- Cutoff + next -->
+  <!-- Filter / Run queue -->
   <div class="section">
-    <div class="section-label">Sync Settings</div>
+    <div class="sync-subhead">Filter Queue</div>
     <div class="row">
-      <button class="btn-save" id="allBtn" style="min-width:36px;padding-left:5px;padding-right:5px;">All</button>
       <span class="cutoff-label">From:</span>
-      <input id="cutoff" type="text" placeholder="YYYY-MM-DD HH:MM" style="flex:1;min-width:0;">
+      <input id="cutoff" type="text" placeholder="YYYY-MM-DD HH:MM" style="flex:1;min-width:0;" title="Only process transactions on or after this date/time. Leave blank for no lower bound.">
       <span class="cutoff-label">To:</span>
-      <input id="upperCutoff" type="text" placeholder="YYYY-MM-DD HH:MM" style="flex:1;min-width:0;">
-      <button class="btn-save" id="nowBtn" style="min-width:36px;padding-left:5px;padding-right:5px;">Now</button>
+      <input id="upperCutoff" type="text" placeholder="YYYY-MM-DD HH:MM" style="flex:1;min-width:0;" title="Only process transactions on or before this date/time. Clears itself automatically when a new scrape brings in something newer. Leave blank for no upper bound.">
+      <button class="btn-save" id="clearFiltersBtn" title="Clear both date filters (show and process everything)">Clear</button>
     </div>
+    <hr class="sync-divider">
+    <div class="sync-subhead">Run Queue</div>
     <div class="row" style="margin-bottom:0;">
-      <button id="step" style="flex:1;font-size:12px;padding:6px;background:var(--btn-bg);color:var(--btn-text);border:1px solid var(--btn-border);border-radius:3px;cursor:pointer;">Next (F7)</button>
-      <button id="next" style="flex:2;margin-top:0;">Auto Run (F8)</button>
-      <button id="stopAuto" style="flex:1;font-size:12px;padding:6px;background:var(--btn-bg);color:var(--btn-text);border:1px solid var(--btn-border);border-radius:3px;cursor:pointer;" disabled>Stop (F7)</button>
+      <button id="next" class="queue-btn" style="flex:2;" title="Process every transaction in range automatically">&#9654; Auto Run</button>
+      <button id="step" class="queue-btn" style="flex:1;" title="Process the next transaction in the queue, navigating to the right Fantrax page if needed">&#9654; Manual Step</button>
     </div>
   </div>
 
   <!-- Transaction queue -->
-  <div class="section-header" style="margin-top:4px;margin-bottom:0;">
+  <div class="section-header" style="margin-bottom:0;">
     <div class="section-label" id="queue-header-label" style="margin-bottom:0;">Transaction Queue</div>
     <div class="toolbar">
       <input id="queueSearchInput" type="text" placeholder="Search players…">
-      <button class="toolbar-icon" id="queueSearchBtn" title="Search transactions">
+      <button class="toolbar-icon" id="queueSearchBtn" title="Search the queue by player name">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
           <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
         </svg>
       </button>
-      <button class="toolbar-icon" id="resetQueueBtn" title="Reset processed: mark all transactions as unprocessed">
+      <button class="toolbar-icon" id="filterBrokenBtn" title="Show only broken transactions that need a manual fix">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-          <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-          <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+          <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
         </svg>
       </button>
-      <button class="toolbar-icon" id="clearQueueBtn" title="Clear queue: re-scrape ESPN to reload">
+      <button class="toolbar-icon" id="processedHistoryBtn" title="View transactions already processed to Fantrax">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+          <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+        </svg>
+      </button>
+      <button class="toolbar-icon" id="clearQueueBtn" title="Clear the queue; re-scrape ESPN to reload it">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
           <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
           <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
@@ -357,6 +552,145 @@
   </div>
   <div id="queue-list">
     <div class="empty">No transactions loaded yet.</div>
+  </div>
+
+  <!-- League Settings modal -->
+  <div id="leagueSettingsModal" class="modal-overlay" hidden>
+    <div class="modal-box wide">
+      <div class="modal-header">
+        <div class="section-label" style="margin-bottom:0;">League Settings</div>
+        <button class="toolbar-icon" id="leagueSettingsCloseBtn" title="Close">&times;</button>
+      </div>
+
+      <div class="row" style="margin-bottom:4px;">
+        <input id="leagueUrlInput" type="text" placeholder="Paste ESPN or Fantrax league URL to auto-fill the ID below" style="flex:1;">
+      </div>
+      <hr class="sync-divider">
+
+      <div class="sync-subhead">ESPN</div>
+      <div class="row">
+        <label class="settings-label"><span>League ID:</span><span class="leader"></span></label>
+        <input id="espnLeagueId" type="text" placeholder="numeric ID" style="flex:0 0 122px;min-width:0;">
+        <button id="espnHomeBtn" class="toolbar-icon" title="Open ESPN Fantasy Baseball" style="flex:0 0 auto;font-size:11px;padding:2px 4px;">&#8599;</button>
+      </div>
+      <div class="row" style="margin-bottom:4px;">
+        <button class="link-btn" id="loadLeagueSettingsBtn" title="Open the ESPN League Settings page and fill in Roster Size / IL Bench Size below" style="flex:1;">&#9654; Load League Settings</button>
+      </div>
+      <div class="row" style="margin-bottom:3px;">
+        <label class="settings-label"><span>Roster Size:</span><span class="leader"></span></label>
+        <input id="rosterSize" type="text" style="flex:0 0 85px;min-width:0;">
+        <span id="rosterSizeCheckmark" style="flex:0 0 auto;font-size:13px;margin-left:6px;" hidden></span>
+      </div>
+      <div class="row" style="margin-bottom:0;">
+        <label class="settings-label"><span>IL Bench Size:</span><span class="leader"></span></label>
+        <input id="ilSlots" type="text" style="flex:0 0 85px;min-width:0;">
+        <span id="ilSlotsCheckmark" style="flex:0 0 auto;font-size:13px;margin-left:6px;" hidden></span>
+      </div>
+
+      <hr class="sync-divider">
+
+      <div class="sync-subhead">Fantrax</div>
+      <div class="row">
+        <label class="settings-label"><span>League ID:</span><span class="leader"></span></label>
+        <input id="fantraxLeagueId" type="text" placeholder="alphanumeric ID" style="flex:0 0 122px;min-width:0;">
+        <button id="fantraxHomeBtn" class="toolbar-icon" title="Open Fantrax Fantasy Leagues" style="flex:0 0 auto;font-size:11px;padding:2px 4px;">&#8599;</button>
+      </div>
+      <div class="row" style="margin-bottom:4px;">
+        <button class="link-btn" id="checkFantraxSettingsBtn" title="Open Fantrax League Roster Settings and confirm Max Total Players covers your ESPN roster + IL, then check the Trade Deadline is blank" style="flex:1;">&#9654; Check League Settings</button>
+      </div>
+      <div class="row" style="margin-bottom:3px;">
+        <label class="settings-label"><span>Max Total Roster Size:</span><span class="leader"></span></label>
+        <input id="fantraxRosterSize" type="text" readonly class="check-warning" style="flex:0 0 85px;min-width:0;color:var(--label);cursor:help;" tabindex="-1" title="Minimum active roster slots needed in Fantrax league settings to avoid roster-full errors on replay. Red until Check League Settings confirms it.">
+        <span id="fantraxRosterCheckmark" style="flex:0 0 auto;font-size:13px;margin-left:6px;" title="Not checked yet. Click Check League Settings."></span>
+      </div>
+      <div class="row" style="margin-bottom:0;">
+        <label class="settings-label"><span>Trade Deadline Date:</span><span class="leader"></span></label>
+        <input id="fantraxTradeDeadlineValue" type="text" readonly class="check-warning" value="(blank)" style="flex:0 0 85px;min-width:0;font-size:11px;color:var(--label);cursor:help;" tabindex="-1" title="Fantrax's current Trade Deadline Date setting. Should stay blank so historical trades can always be replayed. Red until Check League Settings confirms it.">
+        <span id="fantraxTradeDeadlineCheckmark" style="flex:0 0 auto;font-size:13px;margin-left:6px;" title="Not checked yet. Click Check League Settings."></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager Stats modal -->
+  <div id="statsModal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="section-label" style="margin-bottom:0;">Manager Stats</div>
+        <button class="toolbar-icon" id="statsCloseBtn" title="Close">&times;</button>
+      </div>
+      <div class="row" style="margin-bottom:4px;">
+        <select id="statsMode" style="flex:0 0 auto;">
+          <option value="DROP" selected>Most Dropped</option>
+          <option value="ADD">Most Added</option>
+          <option value="TRADE">Most Trades</option>
+          <option value="HOUR">Transactions by Hour</option>
+          <option value="LINEUP_HOUR">Roster Updates by Hour</option>
+          <option value="ALL_HOUR">All Activity by Hour</option>
+        </select>
+        <select id="shameStatsTeamFilter" style="flex:1;min-width:0;">
+          <option value="">All Teams</option>
+        </select>
+      </div>
+      <div id="statsModeHint" class="empty" style="padding:0 2px 4px;" hidden></div>
+      <div id="shameStatsItems"></div>
+    </div>
+  </div>
+
+  <!-- Player Notes modal -->
+  <div id="notesModal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="section-label" style="margin-bottom:0;">Player Notes</div>
+        <button class="toolbar-icon" id="notesCloseBtn" title="Close">&times;</button>
+      </div>
+      <div class="row">
+        <div style="position:relative;flex:1;">
+          <input id="noteNameInput" type="text" placeholder="Player name" autocomplete="off" style="width:100%;">
+          <div id="noteNameSuggestions" class="suggest-dropdown" hidden></div>
+        </div>
+        <input id="noteTextInput" type="text" placeholder="Note (optional)" style="flex:1;">
+      </div>
+      <div class="row" style="margin-bottom:0;">
+        <button class="btn-save" id="noteAddBtn" style="flex:1;">Add Note</button>
+      </div>
+
+      <hr class="sync-divider">
+      <div class="row" style="margin-bottom:4px;">
+        <input id="noteSearchInput" type="text" placeholder="Search name or note…" style="flex:1;">
+      </div>
+      <div id="notesListItems"></div>
+    </div>
+  </div>
+
+  <!-- Processed History modal -->
+  <div id="processedHistoryModal" class="modal-overlay" hidden>
+    <div class="modal-box wide">
+      <div class="modal-header">
+        <div class="section-label" style="margin-bottom:0;">Processed History</div>
+        <button class="toolbar-icon" id="processedHistoryCloseBtn" title="Close">&times;</button>
+      </div>
+      <div class="row" style="margin-bottom:4px;">
+        <input id="processedHistorySearchInput" type="text" placeholder="Search players…" style="flex:1;">
+      </div>
+      <div id="processedHistoryList"></div>
+    </div>
+  </div>
+
+  <!-- Fix Broken Transaction modal -->
+  <div id="fixBrokenModal" class="modal-overlay" hidden>
+    <div class="modal-box wide">
+      <div class="modal-header">
+        <div class="section-label" style="margin-bottom:0;">Fix Broken Transaction</div>
+        <button class="toolbar-icon" id="fixBrokenCloseBtn" title="Close">&times;</button>
+      </div>
+      <div class="row" style="margin-bottom:8px;">
+        <span style="font-size:10px;color:var(--label);">ESPN's own page was missing this player's info for one side of this transaction (a rare ESPN bug). Auto Run and Step are both blocked until this is fixed. Fill in team and position too, not just the name: without them, a duplicate name on Fantrax may resolve to the wrong player.</span>
+      </div>
+      <div id="fixBrokenFields"></div>
+      <div class="row" style="margin-bottom:0;">
+        <button class="btn-save" id="fixBrokenSaveBtn" style="flex:1;">Save and Unblock</button>
+      </div>
+    </div>
   </div>
 
   <script src="popup.js"></script>
