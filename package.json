@@ -1,6 +1,6 @@
 {
   "name": "fantasy-sync-assistant",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Firefox extension for syncing ESPN fantasy baseball transactions to a Fantrax mirrored league",
   "scripts": {
     "build": "web-ext build",
