@@ -30,7 +30,7 @@ function parseName(full) {
   }
 
   // Check for one-word particle (only if two-word didn't already extend)
-  // e.g. "De" in "Juan De Santos" — but NOT "De" inside "DeMartini" (already one token)
+  // e.g. "De" in "Juan De Santos", but NOT "De" inside "DeMartini" (already one token)
   if (lastStart === parts.length - 1 && lastStart >= 2) {
     if (NAME_PARTICLES.has(parts[lastStart - 1].toLowerCase())) lastStart -= 1;
   }
@@ -178,7 +178,7 @@ function extractTransactions() {
       const typeSpan = row.querySelector(".typeInfo span:last-child");
       if (!typeSpan?.innerText.toLowerCase().includes("processed")) return;
 
-      // Extract embedded drops — a trading team may drop a player to clear roster space.
+      // Extract embedded drops: a trading team may drop a player to clear roster space.
       // These appear as .waiver-drop spans inside the trade row and must process
       // on the claim/drop page before the trade itself.
       row.querySelectorAll(".transaction-details.waiver-drop").forEach(detail => {
@@ -226,7 +226,7 @@ function extractTransactions() {
 
       results.push({
         type: "TRADE",
-        team: teams.join(" \u21d4 "),   // ⇔
+        team: teams.join(" \u21d4 "),   // the double arrow icon shown between traded teams
         teams, sides,
         add: null, drop: null,
         date: parseDate(row), idx
@@ -432,7 +432,7 @@ async function scrapeActivityPage(params) {
   return { rawEmpty: false, qualifyingCount: data.length };
 }
 
-// Load All History mode: walk pages newest → oldest until one comes back empty
+// Load All History mode: walk pages from newest to oldest until one comes back empty
 // (or the DOM table never appears, which reads the same way: end of history).
 const LOAD_ALL_MAX_PAGES = 500; // safety valve against a runaway loop
 
@@ -609,7 +609,7 @@ function parseDraftDatetime() {
     if (!valText) continue;
 
     if (/Draft Date/i.test(keyText)) {
-      // "Tue., Mar. 24, 2026" — skip optional weekday, grab month/day/year
+      // "Tue., Mar. 24, 2026": skip optional weekday, grab month/day/year
       const dm = valText.match(/(?:\w+\.,?\s+)?(\w+)\.?\s+(\d{1,2}),?\s+(\d{4})/);
       if (dm) {
         month = MONTHS[dm[1]]; // 0-indexed
@@ -675,7 +675,7 @@ async function scrapeDraftPage() {
       const playerName = playerEl.textContent.trim();
       const teamName   = (teamEl.getAttribute("title") || teamEl.textContent).trim();
 
-      // MLB team abbreviation from the fw-normal span: " SEA, " → "SEA"
+      // MLB team abbreviation from the fw-normal span: " SEA, " becomes "SEA"
       const mlbTeamEl = row.querySelector(".fw-normal");
       const mlbTeam   = mlbTeamEl
         ? mlbTeamEl.textContent.trim().replace(/,/g, "").trim()
@@ -684,7 +684,7 @@ async function scrapeDraftPage() {
       const player = parseName(playerName);
       if (mlbTeam) player.mlbTeam = mlbTeam;
 
-      // Higher idx = older in background sort (pick 1 is oldest → highest idx)
+      // Higher idx = older in background sort (pick 1 is oldest, so it has the highest idx)
       const idx = totalPicks - overallPick;
 
       transactions.push({
@@ -821,7 +821,7 @@ async function scrapeLeagueSettingsPage() {
   const { espnLeagueId } = await browser.storage.local.get("espnLeagueId");
 
   if (!espnLeagueId || urlLeagueId !== espnLeagueId) {
-    console.log("[EXT] ESPN: skipping scrape — URL leagueId", urlLeagueId, "≠ saved", espnLeagueId || "(none)");
+    console.log("[EXT] ESPN: skipping scrape, URL leagueId", urlLeagueId, "doesn't match saved", espnLeagueId || "(none)");
     return;
   }
 

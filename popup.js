@@ -5,8 +5,8 @@ const ESPN_MONTHS = {
 
 // Converts various date shorthands to "YYYY-MM-DD HH:MM".
 // Supported inputs:
-//   "MM-DD HH:MM"          → current year prepended
-//   "Mon Apr 6 6:19 am"    → ESPN activity format
+//   "MM-DD HH:MM"          (current year prepended)
+//   "Mon Apr 6 6:19 am"    (ESPN activity format)
 // Returns original string unchanged if nothing matches.
 function normalizeToISO(str) {
   // "MM-DD HH:MM" shorthand
@@ -80,7 +80,7 @@ function formatDate(val) {
   return `${months[dt.getMonth()]} ${dt.getDate()} ${h12}:${mins}${ampm}`;
 }
 
-// Mirrors txKey() in background.js — used to compute exclude keys in the popup
+// Mirrors txKey() in background.js; used to compute exclude keys in the popup
 function txKeyForRow(tx) {
   const t = tx.date ? new Date(tx.date).getTime() : 0;
   if (tx.type === "TRADE") {
@@ -255,7 +255,7 @@ function extractEspnId(raw) {
 }
 
 function extractFantraxId(raw) {
-  // Accept a full Fantrax URL — check path segment "league/ID" first,
+  // Accept a full Fantrax URL: check path segment "league/ID" first,
   // then query param "leagueId=ID", or a bare alphanumeric ID
   const fromPath  = raw.match(/\/league\/([a-z0-9]+)/i);
   if (fromPath) return fromPath[1];
@@ -385,8 +385,8 @@ function updateFantraxRosterSize() {
 }
 
 // Red-outlines whichever of these four fields that gate the rest of the popup
-// are currently empty, so it's obvious what's still missing. Max Total Roster
-// Size (fantraxRosterSize) isn't here even though it's also red when empty:
+// are currently empty, so it's obvious what's still missing. Max Total
+// Players (fantraxRosterSize) isn't here even though it's also red when empty:
 // it's driven entirely by its own check-warning state now (red until "Check
 // League Settings" actually verifies it), the same as Trade Deadline Date,
 // rather than this separate "did an ESPN value flow into it yet" logic.
@@ -462,8 +462,8 @@ function finalizeDrag() {
   const selected = [...list.querySelectorAll(".tx-row.drag-selected")];
   const dates    = selected.map(r => r.dataset.date).filter(Boolean).sort();
   if (!dates.length) return;
-  document.getElementById("cutoff").value      = dates[0];                 // oldest → lower bound
-  document.getElementById("upperCutoff").value = dates[dates.length - 1]; // newest → upper bound
+  document.getElementById("cutoff").value      = dates[0];                 // oldest is the lower bound
+  document.getElementById("upperCutoff").value = dates[dates.length - 1]; // newest is the upper bound
   browser.runtime.sendMessage({ type: "SET_UPPER_CUTOFF", value: dates[dates.length - 1] }).catch(() => {});
   renderQueue();
 }
@@ -503,7 +503,7 @@ function setupDragSelection() {
   });
 }
 
-// "F. LastName" — first initial + period + last name
+// "F. LastName": first initial + period + last name
 function shortName(p) {
   const initial = p.first ? p.first[0] + ". " : "";
   return initial + p.last;
@@ -591,7 +591,7 @@ async function renderQueue() {
 
   const queueHeaderLabel = document.getElementById("queue-header-label");
   if (queueHeaderLabel) {
-    queueHeaderLabel.textContent = `${res.queue.length} transactions \u2014 next: ${nextLabel}`;
+    queueHeaderLabel.textContent = `${res.queue.length} transactions, next: ${nextLabel}`;
   }
 
   [...res.queue].reverse().forEach((tx, revIdx) => {
@@ -681,7 +681,7 @@ async function renderQueue() {
       const bGives = tx.sides[teamB] || [];
       const tradePlayers = [...aGives, ...bGives].map(p => `${p.first} ${p.last}`).join(" ");
 
-      // Row 1 — Team A: receives bGives (+), gives aGives (-)
+      // Row 1 (Team A): receives bGives (+), gives aGives (-)
       const r1 = makeRow(formatDate(tx.date), "TRD", teamA);
       r1.row.dataset.players = tradePlayers;
       bGives.forEach(p => addPlayerToken(r1.playersSpan, `+${shortName(p)}`, "add"));
@@ -692,7 +692,7 @@ async function renderQueue() {
       ].join("  ");
       list.appendChild(r1.row);
 
-      // Row 2 — Team B: receives aGives (+), gives bGives (-)
+      // Row 2 (Team B): receives aGives (+), gives bGives (-)
       const r2 = makeRow("", "", teamB);
       r2.row.dataset.players = tradePlayers;
       aGives.forEach(p => addPlayerToken(r2.playersSpan, `+${shortName(p)}`, "add"));
@@ -1294,14 +1294,14 @@ function setFantraxSettingsLoadingState(loading) {
   btn.textContent = loading ? "■ Stop" : "▶ Check League Settings";
   btn.title = loading
     ? "Cancel checking league settings"
-    : "Open Fantrax League Roster Settings and confirm Max Total Players covers your ESPN roster + IL";
+    : "Open Fantrax League Roster Settings and confirm Max Total Players covers your ESPN roster + IL, then check the Trade Deadline is blank";
   if (loading) setExclusiveRunning(btn.id); else clearExclusiveRunning(btn.id);
 }
 
 // Compares Fantrax's Max Total Players against ESPN roster size + IL slots.
 // The value field itself stays red (.check-warning) as the "not verified"
 // signal until a check actually confirms it's fine, at which point it clears
-// and a green checkmark (or a red ✗ with the numbers, if Fantrax falls short)
+// and a green checkmark (or a red cross mark with the numbers, if Fantrax falls short)
 // appears next to it.
 function showRosterCheckmark(maxTotal) {
   const el      = document.getElementById("fantraxRosterCheckmark");
@@ -1460,7 +1460,7 @@ function setLoadRosterUpdatesButton(running, page) {
     loadRosterUpdatesBtn.title = `Loading ESPN roster updates, currently on page ${page}. Click to stop.`;
   } else {
     loadRosterUpdatesBtn.textContent = "▶ Load Roster Updates";
-    loadRosterUpdatesBtn.title = "Walk every ESPN roster-update page and track when managers make lineup moves (not added to the tx queue)";
+    loadRosterUpdatesBtn.title = "Walk every ESPN roster-update page and track when managers make lineup moves (not added to the transaction queue)";
   }
   if (running) setExclusiveRunning(loadRosterUpdatesBtn.id); else clearExclusiveRunning(loadRosterUpdatesBtn.id);
 }
@@ -1500,7 +1500,7 @@ browser.storage.local.get("espnAutoLoadRosterUpdates").then(res => {
 
 // Locks a button to its own current rendered width (its natural "idle label"
 // width, measured the first time it's visible) so toggling to the much shorter
-// "■ Stop" text doesn't shrink the button and shift the rest of its row.
+// "Stop" text doesn't shrink the button and shift the rest of its row.
 function lockButtonWidth(id) {
   const btn = document.getElementById(id);
   if (!btn.style.minWidth) btn.style.minWidth = `${btn.offsetWidth}px`;

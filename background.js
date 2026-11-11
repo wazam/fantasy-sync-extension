@@ -244,11 +244,11 @@ async function autoAdvance() {
   const msgType  = nextPath === "playerImport.go" ? "RUN_IMPORT" : "RUN_NEXT";
 
   if (nextPath === prevPath) {
-    // Same page type — send message directly, no navigation needed
+    // Same page type: send message directly, no navigation needed
     expectedPath = nextPath; // restore so tabs.onUpdated stays armed for future advances
     browser.tabs.sendMessage(autoTabId, { type: msgType }).catch(() => {});
   } else {
-    // Different page — navigate the tab
+    // Different page: navigate the tab
     const res = await browser.storage.local.get("fantraxLeagueId");
     const fantraxId = res.fantraxLeagueId;
     if (!fantraxId) {
@@ -302,7 +302,7 @@ async function startStep(tabId) {
     if (urlId && urlId !== fantraxId) {
       browser.runtime.sendMessage({
         type: "AUTO_ERROR",
-        message: `Wrong league — tab has leagueId=${urlId} but saved ID is ${fantraxId}. Navigate to the correct Fantrax league first.`
+        message: `Wrong league: tab has leagueId=${urlId} but saved ID is ${fantraxId}. Navigate to the correct Fantrax league first.`
       }).catch(() => {});
       return;
     }
@@ -367,7 +367,7 @@ async function startAuto(tabId) {
       autoRunning = false;
       browser.runtime.sendMessage({
         type: "AUTO_ERROR",
-        message: `Wrong league — tab has leagueId=${urlId} but saved ID is ${fantraxId}. Navigate to the correct Fantrax league first.`
+        message: `Wrong league: tab has leagueId=${urlId} but saved ID is ${fantraxId}. Navigate to the correct Fantrax league first.`
       }).catch(() => {});
       return;
     }
@@ -377,7 +377,7 @@ async function startAuto(tabId) {
   const msgType  = nextPath === "playerImport.go" ? "RUN_IMPORT" : "RUN_NEXT";
 
   if (tab.url?.includes(nextPath)) {
-    // Already on the right page — send directly
+    // Already on the right page: send directly
     expectedPath = nextPath;
     browser.tabs.sendMessage(tabId, { type: msgType }).catch(() => {});
   } else {
@@ -712,7 +712,7 @@ browser.runtime.onMessage.addListener((msg, sender) => {
   if (msg.type === "TRANSACTION_DONE") {
     return (async () => {
       if (msg.drftBatch) {
-        // import.js processed all picks at once — advance past every DRFT entry
+        // import.js processed all picks at once, so advance past every DRFT entry
         while (index < queue.length && queue[index].type === "DRFT") markProcessed(queue[index++]);
       } else {
         markProcessed(msg.tx);

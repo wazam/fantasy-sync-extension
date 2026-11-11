@@ -43,8 +43,8 @@ function selectTeam(teamName) {
 }
 
 // Generate Fantrax search strings to try for a player, from most to least specific.
-// Covers: dot/no-dot initials (TJ ↔ T.J.), accent stripping, hyphen variants,
-// hyphenated-first → initials (Jean-Carlos → J.C.), and last-name-only fallback.
+// Covers: dot/no-dot initials (TJ and T.J.), accent stripping, hyphen variants,
+// hyphenated first names to initials (Jean-Carlos to J.C.), and last-name-only fallback.
 function nameVariants(player) {
   const variants = [];
   const seen = new Set();
@@ -71,37 +71,37 @@ function nameVariants(player) {
   add(rawLast, rawFirst);
   if (aLast !== rawLast || aFirst !== rawFirst) add(aLast, aFirst);
 
-  // 2. Remove dots from first name: "T.J." → "TJ", "J.C." → "JC"
+  // 2. Remove dots from first name: "T.J." becomes "TJ", "J.C." becomes "JC"
   const firstNoDots = rawFirst.replace(/\./g, "");
   if (firstNoDots !== rawFirst) add(rawLast, firstNoDots);
 
-  // 3. Add dots to all-cap initials: "TJ" → "T.J.", "PJ" → "P.J.", "JPC" → "J.P.C."
+  // 3. Add dots to all-cap initials: "TJ" becomes "T.J.", "PJ" becomes "P.J.", "JPC" becomes "J.P.C."
   if (/^[A-Z]{2,3}$/.test(rawFirst)) {
     add(rawLast, rawFirst.split("").join(".") + ".");
   }
-  // Handle "T.J" missing trailing dot → "T.J."
+  // Handle "T.J" with no trailing dot, which becomes "T.J."
   if (/^[A-Z]\.[A-Z]$/.test(rawFirst)) add(rawLast, rawFirst + ".");
 
-  // 4. Hyphenated first name → initials: "Jean-Carlos" → "J.C." and "JC"
+  // 4. Hyphenated first name to initials: "Jean-Carlos" becomes "J.C." and "JC"
   if (rawFirst.includes("-")) {
     const parts = rawFirst.split("-");
     add(rawLast, parts.map(p => p[0] + ".").join(""));  // "J.C."
     add(rawLast, parts.map(p => p[0]).join(""));         // "JC"
   }
 
-  // 5. Last name hyphen variants: "Fitz-Gerald" → "Fitz Gerald", "FitzGerald"
+  // 5. Last name hyphen variants: "Fitz-Gerald" becomes "Fitz Gerald", "FitzGerald"
   if (rawLast.includes("-")) {
     add(rawLast.replace(/-/g, " "), rawFirst);
     add(rawLast.replace(/-/g, ""),  rawFirst);
   }
 
-  // 5b. Accent-stripped last name only (e.g. "Peña" → "Pena")
+  // 5b. Accent-stripped last name only (e.g. "Peña" becomes "Pena")
   if (aLast !== rawLast) add(aLast, "");
 
-  // 5c. First segment of hyphenated last name: "Fitz-Gerald" → "Fitz"
+  // 5c. First segment of hyphenated last name: "Fitz-Gerald" becomes "Fitz"
   if (rawLast.includes("-")) add(rawLast.split("-")[0], "");
 
-  // 6. Last name only — broadest fallback
+  // 6. Last name only: broadest fallback
   add(rawLast, "");
 
   return variants;
@@ -118,14 +118,14 @@ async function tryFillAdd(searchStr) {
 }
 
 // Try all name variants in order. Returns { ok, count, searchStr }.
-// ok=true means exactly 1 result found — safe to proceed.
-// ok=false means 0 (not found) or >1 (ambiguous) — caller should alert.
+// ok=true means exactly 1 result found; safe to proceed.
+// ok=false means 0 (not found) or >1 (ambiguous); caller should alert.
 async function fillAddWithFallback(player) {
   const variants = nameVariants(player);
 
   for (const searchStr of variants) {
     const count = await tryFillAdd(searchStr);
-    console.log(`[EXT] claim search "${searchStr}" → ${count} result(s)`);
+    console.log(`[EXT] claim search "${searchStr}": ${count} result(s)`);
     if (count === 1) return { ok: true, count, searchStr };
     if (count  > 1) {
       // Disambiguate by MLB team when available
@@ -151,7 +151,7 @@ async function fillAddWithFallback(player) {
           return { ok: true, count, searchStr };
         }
       }
-      return { ok: false, count, searchStr }; // ambiguous — stop here
+      return { ok: false, count, searchStr }; // ambiguous: stop here
     }
     // count === 0: try next variant
   }
@@ -169,7 +169,7 @@ function selectDrop(player) {
   const reversedName = `${player.last}, ${player.first}`.toLowerCase();
   const lastLower    = player.last.toLowerCase();
 
-  // Pass 1: exact full name — handles both display formats
+  // Pass 1: exact full name, handles both display formats
   for (let row of rows) {
     const nameCell = row.querySelector(".player a");
     if (!nameCell) continue;
@@ -179,7 +179,7 @@ function selectDrop(player) {
       return true;
     }
   }
-  // Pass 2: last name substring — fallback for suffix variants (Jr., Sr., III, etc.)
+  // Pass 2: last name substring, fallback for suffix variants (Jr., Sr., III, etc.)
   for (let row of rows) {
     const nameCell = row.querySelector(".player a");
     if (!nameCell) continue;
@@ -271,12 +271,12 @@ async function waitForOKAndClick(maxMs = 8000, forceDropAction = false) {
 
         // If this is a drop transaction, force the action dropdown to "Drop" (value 1).
         // Fantrax defaults to "Move to IR" for IL-eligible players.
-        // __submitIndeed reads the dropdown value at runtime — do NOT call
+        // __submitIndeed reads the dropdown value at runtime; do NOT call
         // __claimRosterActionChanged(), which resets the value back to IR for
         // IL-eligible players and is the root cause of the incorrect submission.
         if (forceDropAction) {
           const actionDd = alertBox.querySelector("#ddClaimRosterAction");
-          if (actionDd) actionDd.value = "1"; // "Drop" — set silently, no event dispatch
+          if (actionDd) actionDd.value = "1"; // "Drop": set silently, no event dispatch
         }
         const okBtn = alertBox.querySelector(".filterButton.curve2");
         if (!okBtn || okBtn.textContent.trim() !== "OK") { await delay(300); continue; }
@@ -304,15 +304,15 @@ async function clickSubmitAndAwaitPopups(forceDropAction = false, expectedPopups
 
   if (expectedPopups !== null) {
     for (let i = 0; i < expectedPopups; i++) {
-      const maxMs  = i === 0 ? 6000 : 8000; // generous window for Success! — server-side IL/drop ops can be slow
+      const maxMs  = i === 0 ? 6000 : 8000; // generous window for Success!, since server-side IL/drop ops can be slow
       const force  = i === 0 ? forceDropAction : false;
       if (i > 0) await delay(300); // brief settle before Success! popup to avoid missing the click
       const result = await waitForOKAndClick(maxMs, force);
-      if (!result) break; // popup didn't appear — stop early
+      if (!result) break; // popup didn't appear: stop early
       if (result.rejected) return result;
     }
   } else {
-    // Unknown count — loop with short timeout so we don't over-wait
+    // Unknown count: loop with short timeout so we don't over-wait
     let result = await waitForOKAndClick(6000, forceDropAction);
     while (result && !result.rejected) {
       result = await waitForOKAndClick(600);
@@ -353,7 +353,7 @@ async function processTrade(tx) {
   if (!submitted) console.warn("[EXT] Submit Trade button not found");
 
   // Wait for the success popup then click OK.
-  // Send TRANSACTION_DONE immediately after clicking — before any delay — so
+  // Send TRANSACTION_DONE immediately after clicking (before any delay) so
   // background.js nulls out expectedPath before the trade page auto-reload
   // fires tabs.onUpdated. If we wait 400ms first, the reload may beat the message
   // and cause RUN_NEXT to fire on the freshly-loaded trade page.
@@ -381,7 +381,7 @@ async function processTrade(tx) {
           return;
         }
         browser.runtime.sendMessage({ type: "TRANSACTION_DONE", tx }).catch(() => {});
-        return; // page will reload and destroy this script — nothing more to do
+        return; // page will reload and destroy this script; nothing more to do
       }
     }
     await delay(300);
@@ -532,7 +532,7 @@ async function findAndClickPlayer(player) {
 
     const rows = poolRows();
 
-    // Single result — click its draft icon
+    // Single result: click its draft icon
     if (count === 1) {
       const draftLink = rows[0].querySelector("td.draft a");
       if (draftLink) { draftLink.click(); await delay(600); return true; }
@@ -558,7 +558,7 @@ async function findAndClickPlayer(player) {
       }
     }
 
-    // Pass 3: team only — last resort, only for last-name-only searches (not "Last, First")
+    // Pass 3: team only. Last resort, only for last-name-only searches (not "Last, First")
     if (!term.includes(",") && mlbRe) {
       for (const row of rows) {
         if (mlbRe.test(row.querySelector(".player")?.textContent || "")) {
@@ -630,14 +630,14 @@ async function runImport() {
     ddTeams.dispatchEvent(new Event("change", { bubbles: true }));
     await delay(1200);
 
-    console.log(`[EXT Import] "${espnTeam}" → Fantrax "${opt.text.trim()}": ${teamPicks.length} picks`);
+    console.log(`[EXT Import] "${espnTeam}" maps to Fantrax "${opt.text.trim()}": ${teamPicks.length} picks`);
 
     for (const tx of teamPicks) {
       const name = `${tx.add.first} ${tx.add.last}`.trim();
       const ok = await findAndClickPlayer(tx.add);
       if (!ok) {
         alert(
-          `[EXT Import] Player not found — import stopped.\n\n` +
+          `[EXT Import] Player not found: import stopped.\n\n` +
           `Player: ${name}\n` +
           `Team: ${espnTeam}\n\n` +
           `Add this player manually, then restart the import.`
@@ -656,7 +656,7 @@ async function runImport() {
       : -1;
     if (actualCount !== teamPicks.length) {
       alert(
-        `[EXT Import] Team count mismatch — import stopped.\n\n` +
+        `[EXT Import] Team count mismatch: import stopped.\n\n` +
         `Team: ${espnTeam}\n` +
         `Expected: ${teamPicks.length} players\n` +
         `Found in table: ${actualCount}\n\n` +
@@ -671,7 +671,7 @@ async function runImport() {
   const finishBtn = [...document.querySelectorAll("#dvDraftSaveButtons .filterButton")]
     .find(el => el.textContent.trim() === "Finish Draft");
   if (!finishBtn) {
-    alert("[EXT Import] Could not find \"Finish Draft\" button — please click it manually.");
+    alert("[EXT Import] Could not find \"Finish Draft\" button: please click it manually.");
     return;
   }
   finishBtn.click();
@@ -681,7 +681,7 @@ async function runImport() {
     .find(el => el.textContent.trim() === "OK"
              && el.getAttribute("onclick")?.includes("__doFinishDraft"));
   if (!okBtn) {
-    alert("[EXT Import] Could not find \"OK\" confirmation button — please click it manually.");
+    alert("[EXT Import] Could not find \"OK\" confirmation button: please click it manually.");
     return;
   }
   okBtn.click();
@@ -699,7 +699,7 @@ async function runImport() {
   });
 
   if (!completed) {
-    alert("[EXT Import] Draft completion not confirmed after 30s — check the page manually.");
+    alert("[EXT Import] Draft completion not confirmed after 30s: check the page manually.");
     return;
   }
 

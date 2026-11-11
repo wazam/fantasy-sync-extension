@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
+  <title>Fantasy Sync Assistant</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html { overflow: hidden; }
@@ -478,7 +479,7 @@
       </div>
       <div class="link-row">
         <button class="link-btn" id="loadAllHistoryBtn" title="Walk every ESPN activity page from newest to oldest and load it all into the queue">&#9654; Load All Activity</button>
-        <button class="link-btn" id="loadRosterUpdatesBtn" title="Walk every ESPN roster-update page and track when managers make lineup moves (not added to the tx queue)">&#9654; Load Roster Updates</button>
+        <button class="link-btn" id="loadRosterUpdatesBtn" title="Walk every ESPN roster-update page and track when managers make lineup moves (not added to the transaction queue)">&#9654; Load Roster Updates</button>
       </div>
       <div class="link-row">
         <button class="link-btn" id="linkEspnWatchlist" title="Open the ESPN Watch List page and add every player to Player Notes">&#9654; Load Watch List</button>
@@ -492,7 +493,7 @@
     <div class="section-label">Fantrax Quick Links</div>
     <div class="links">
       <div class="link-row">
-        <button class="link-btn" id="linkFantraxTrending" title="Open the Fantrax Available Trending Players page to scout free agents">&#8599; Available Trending Players</button>
+        <button class="link-btn" id="linkFantraxTrending" title="Open the Fantrax available trending players page to scout free agents">&#8599; Available Trending Players</button>
         <button class="link-btn" id="linkFantraxRecent" title="Open the Fantrax Transaction History page to cross-check against the queue">&#8599; Transaction History</button>
       </div>
       <div class="link-row">
@@ -508,9 +509,9 @@
     <div class="sync-subhead">Filter Queue</div>
     <div class="row">
       <span class="cutoff-label">From:</span>
-      <input id="cutoff" type="text" placeholder="YYYY-MM-DD HH:MM" style="flex:1;min-width:0;" title="Only process transactions on or after this date/time. Leave blank for no lower bound.">
+      <input id="cutoff" type="text" placeholder="YYYY-MM-DD HH:MM" aria-label="From date and time" style="flex:1;min-width:0;" title="Only process transactions on or after this date/time. Leave blank for no lower bound.">
       <span class="cutoff-label">To:</span>
-      <input id="upperCutoff" type="text" placeholder="YYYY-MM-DD HH:MM" style="flex:1;min-width:0;" title="Only process transactions on or before this date/time. Clears itself automatically when a new scrape brings in something newer. Leave blank for no upper bound.">
+      <input id="upperCutoff" type="text" placeholder="YYYY-MM-DD HH:MM" aria-label="To date and time" style="flex:1;min-width:0;" title="Only process transactions on or before this date/time. Leave blank for no upper bound; clears itself when a new scrape brings in something newer.">
       <button class="btn-save" id="clearFiltersBtn" title="Clear both date filters (show and process everything)">Clear</button>
     </div>
     <hr class="sync-divider">
@@ -527,23 +528,23 @@
     <div class="toolbar">
       <input id="queueSearchInput" type="text" placeholder="Search players…">
       <button class="toolbar-icon" id="queueSearchBtn" title="Search the queue by player name">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
         </svg>
       </button>
       <button class="toolbar-icon" id="filterBrokenBtn" title="Show only broken transactions that need a manual fix">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
         </svg>
       </button>
       <button class="toolbar-icon" id="processedHistoryBtn" title="View transactions already processed to Fantrax">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
           <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
         </svg>
       </button>
       <button class="toolbar-icon" id="clearQueueBtn" title="Clear the queue; re-scrape ESPN to reload it">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
           <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
           <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
         </svg>
@@ -569,7 +570,7 @@
 
       <div class="sync-subhead">ESPN</div>
       <div class="row">
-        <label class="settings-label"><span>League ID:</span><span class="leader"></span></label>
+        <label class="settings-label" for="espnLeagueId"><span>League ID:</span><span class="leader"></span></label>
         <input id="espnLeagueId" type="text" placeholder="numeric ID" style="flex:0 0 122px;min-width:0;">
         <button id="espnHomeBtn" class="toolbar-icon" title="Open ESPN Fantasy Baseball" style="flex:0 0 auto;font-size:11px;padding:2px 4px;">&#8599;</button>
       </div>
@@ -577,12 +578,12 @@
         <button class="link-btn" id="loadLeagueSettingsBtn" title="Open the ESPN League Settings page and fill in Roster Size / IL Bench Size below" style="flex:1;">&#9654; Load League Settings</button>
       </div>
       <div class="row" style="margin-bottom:3px;">
-        <label class="settings-label"><span>Roster Size:</span><span class="leader"></span></label>
+        <label class="settings-label" for="rosterSize"><span>Roster Size:</span><span class="leader"></span></label>
         <input id="rosterSize" type="text" style="flex:0 0 85px;min-width:0;">
         <span id="rosterSizeCheckmark" style="flex:0 0 auto;font-size:13px;margin-left:6px;" hidden></span>
       </div>
       <div class="row" style="margin-bottom:0;">
-        <label class="settings-label"><span>IL Bench Size:</span><span class="leader"></span></label>
+        <label class="settings-label" for="ilSlots"><span>IL Bench Size:</span><span class="leader"></span></label>
         <input id="ilSlots" type="text" style="flex:0 0 85px;min-width:0;">
         <span id="ilSlotsCheckmark" style="flex:0 0 auto;font-size:13px;margin-left:6px;" hidden></span>
       </div>
@@ -591,7 +592,7 @@
 
       <div class="sync-subhead">Fantrax</div>
       <div class="row">
-        <label class="settings-label"><span>League ID:</span><span class="leader"></span></label>
+        <label class="settings-label" for="fantraxLeagueId"><span>League ID:</span><span class="leader"></span></label>
         <input id="fantraxLeagueId" type="text" placeholder="alphanumeric ID" style="flex:0 0 122px;min-width:0;">
         <button id="fantraxHomeBtn" class="toolbar-icon" title="Open Fantrax Fantasy Leagues" style="flex:0 0 auto;font-size:11px;padding:2px 4px;">&#8599;</button>
       </div>
@@ -599,13 +600,13 @@
         <button class="link-btn" id="checkFantraxSettingsBtn" title="Open Fantrax League Roster Settings and confirm Max Total Players covers your ESPN roster + IL, then check the Trade Deadline is blank" style="flex:1;">&#9654; Check League Settings</button>
       </div>
       <div class="row" style="margin-bottom:3px;">
-        <label class="settings-label"><span>Max Total Roster Size:</span><span class="leader"></span></label>
-        <input id="fantraxRosterSize" type="text" readonly class="check-warning" style="flex:0 0 85px;min-width:0;color:var(--label);cursor:help;" tabindex="-1" title="Minimum active roster slots needed in Fantrax league settings to avoid roster-full errors on replay. Red until Check League Settings confirms it.">
+        <label class="settings-label" for="fantraxRosterSize"><span>Max Total Players:</span><span class="leader"></span></label>
+        <input id="fantraxRosterSize" type="text" readonly class="check-warning" style="flex:0 0 85px;min-width:0;color:var(--label);cursor:help;" tabindex="-1" title="Fantrax's Max Total Players must be at least this (ESPN roster + IL) to avoid roster-full errors on replay. Red until Check League Settings confirms it.">
         <span id="fantraxRosterCheckmark" style="flex:0 0 auto;font-size:13px;margin-left:6px;" title="Not checked yet. Click Check League Settings."></span>
       </div>
       <div class="row" style="margin-bottom:0;">
-        <label class="settings-label"><span>Trade Deadline Date:</span><span class="leader"></span></label>
-        <input id="fantraxTradeDeadlineValue" type="text" readonly class="check-warning" value="(blank)" style="flex:0 0 85px;min-width:0;font-size:11px;color:var(--label);cursor:help;" tabindex="-1" title="Fantrax's current Trade Deadline Date setting. Should stay blank so historical trades can always be replayed. Red until Check League Settings confirms it.">
+        <label class="settings-label" for="fantraxTradeDeadlineValue"><span>Trade Deadline Date:</span><span class="leader"></span></label>
+        <input id="fantraxTradeDeadlineValue" type="text" readonly class="check-warning" value="(blank)" style="flex:0 0 85px;min-width:0;font-size:11px;color:var(--label);cursor:help;" tabindex="-1" title="Fantrax's Trade Deadline Date. Must stay blank so older trades can always be replayed. Red until Check League Settings confirms it.">
         <span id="fantraxTradeDeadlineCheckmark" style="flex:0 0 auto;font-size:13px;margin-left:6px;" title="Not checked yet. Click Check League Settings."></span>
       </div>
     </div>
@@ -684,7 +685,7 @@
         <button class="toolbar-icon" id="fixBrokenCloseBtn" title="Close">&times;</button>
       </div>
       <div class="row" style="margin-bottom:8px;">
-        <span style="font-size:10px;color:var(--label);">ESPN's own page was missing this player's info for one side of this transaction (a rare ESPN bug). Auto Run and Step are both blocked until this is fixed. Fill in team and position too, not just the name: without them, a duplicate name on Fantrax may resolve to the wrong player.</span>
+        <span style="font-size:10px;color:var(--label);">ESPN's own page was missing this player's info for one side of this transaction (a rare ESPN bug). Auto Run and Manual Step are both blocked until this is fixed. Fill in team and position too, not just the name: without them, a duplicate name on Fantrax may resolve to the wrong player.</span>
       </div>
       <div id="fixBrokenFields"></div>
       <div class="row" style="margin-bottom:0;">
