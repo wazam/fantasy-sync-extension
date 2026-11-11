@@ -18,7 +18,7 @@ Collected ideas for future development. Not actively planned or prioritized.
 
 4. **Configurable Keybindings**: allow users to set or disable keyboard shortcuts for the Step and Auto Run actions from the popup settings
 
-5. **Watchlisted Player Notes to Fantrax Watchlist**: mark each player from Player Notes entries tagged "Watchlist" as watched on Fantrax (exact mechanism TBD, likely from the Available Trending Players page), so privately-tracked targets also surface in Fantrax's own watchlist views without ESPN ever exposing that interest to leaguemates
+5. **Watchlisted Player Notes to Fantrax Watchlist**: mark each player from Player Notes entries tagged "Watchlist" as watched on Fantrax (exact mechanism TBD, likely from the available trending players page), so privately-tracked targets also surface in Fantrax's own watchlist views without ESPN ever exposing that interest to leaguemates
 
 6. **Scheduled ESPN to Fantrax Sync**: automatically check the ESPN league for new transactions on a schedule and import them to Fantrax without manual triggering
 
