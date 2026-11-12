@@ -37,7 +37,7 @@ Rename the `## Unreleased` heading to the new version, and go over its notes aga
 - ...
 ```
 
-- Use the date the release goes live, in local time.
+- Use the date the release goes live, in local time (America/New_York).
 - Leave out an empty section.
 - After the release, start a new `## Unreleased` section only when the next change lands, so the top of the file never shows an empty heading.
 - The heading link stays broken until the GitHub Release exists (step 8).
@@ -91,7 +91,11 @@ git commit -m "release: vX.Y.Z" -m "feat: ..." -m "fix: ..."
 
 ```bash
 git push origin main vX.Y.Z
+git ls-remote --tags origin | grep vX.Y.Z
+git remote -v  # SSH only, no token in any URL
 ```
+
+The remote check is there because this repo's `origin` once had a GitHub token in an HTTPS URL.
 
 ## 6. Submit to Mozilla (AMO) for signing
 
