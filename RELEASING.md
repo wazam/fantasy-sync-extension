@@ -1,6 +1,12 @@
 # Releasing
 
-How to ship a new version of Fantasy Sync Assistant. Versions follow semver (`vX.Y.Z`), and the release notes live in [CHANGELOG.md](CHANGELOG.md).
+How a new version of Fantasy Sync Assistant goes from `main` to a Mozilla-signed add-on on AMO and a GitHub Release. Versions follow semver; replace `X.Y.Z` with the new version throughout.
+
+npm runs in a throwaway `node:26-slim` container (Node's current LTS line), so nothing is installed on the host. Define this once in the terminal, and every `npm` command below goes through it:
+
+```bash
+npm() { docker run --rm -u 1000:1000 -e HOME=/tmp -e NPM_CONFIG_UPDATE_NOTIFIER=false -v "$PWD":/app -w /app node:26-slim npm "$@"; }
+```
 
 ## 1. Bump the version
 
@@ -72,6 +78,15 @@ Check that:
 - Every entry in this version's notes works as described.
 
 If you change code after testing, go back to the start of this step.
+
+### Updating Node and web-ext
+
+Neither ships: the zip holds only the files named in `web-ext-config.mjs`. Update them on purpose (an `npm audit` alert, Node leaving support, or the start of a new round of work), and only before step 3, never between the test and the tag.
+
+- **Node** is the `node:N-slim` tag in the `npm` function at the top of this file, and the version the README's build step names. Use the current LTS line (an even major version): change both, then `rm -rf node_modules && npm ci`.
+- **web-ext:** `npm install --save-dev web-ext@<version>`, then `npm audit fix`. Never `--force`, which can downgrade web-ext.
+- Then run step 3 in full, and check the zip lists the same files as before.
+- Commit the update on its own: `chore: update Node to <version> and web-ext to <version>`.
 
 ## 4. Commit and tag
 
@@ -151,12 +166,3 @@ They copy the README and don't update on their own. Do this after AMO has approv
   For a page that differs, move anything better on the page into CHANGELOG.md first, then overwrite the page: `awk "/^## \\[$v\\]/{f=1;next} /^## /{f=0} f" CHANGELOG.md | gh release edit $v --notes-file -`.
 - The README badges need no edits: they're shields.io endpoints pulling live from AMO and GitHub, so they update on their own once both of the above are live.
 - The README still matches the extension, and the AMO listing matches the README. Unlike the badges, neither updates itself.
-
-## Updating Node and web-ext
-
-Neither ships: the zip holds only the files named in `web-ext-config.mjs`. Update them on purpose (an `npm audit` alert, Node leaving support, or the start of a new round of work), and only before step 3, never between the test and the tag.
-
-- **Node** lives only in `.tool-versions`. Use the current LTS line (an even major version): `asdf install nodejs <version>`, change `.tool-versions`, then `rm -rf node_modules && npm ci`.
-- **web-ext:** `npm install --save-dev web-ext@<version>`, then `npm audit fix`. Never `--force`, which can downgrade web-ext.
-- Then run step 3 in full, and check the zip lists the same files as before.
-- Commit the update on its own: `chore: update Node to <version> and web-ext to <version>`.
