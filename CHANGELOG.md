@@ -1,6 +1,6 @@
 # Changelog
 
-Release notes for every version, newest first. Each version is tagged in git and has a matching [release on GitHub](https://github.com/wazam/fantasy-sync-extension/releases) with the signed `.xpi` and source `.zip` attached. Changes that haven't been released yet collect under **Unreleased**, and [RELEASING.md](RELEASING.md) covers how to ship them.
+Release notes for every version, newest first. Each version is tagged in git and has a matching [release on GitHub](https://github.com/wazam/fantasy-sync-extension/releases). Changes that haven't been released yet collect under **Unreleased**, and [RELEASING.md](RELEASING.md) covers how to ship them.
 
 ## [v1.2.1](https://github.com/wazam/fantasy-sync-extension/releases/tag/v1.2.1) (2026-11-11)
 
